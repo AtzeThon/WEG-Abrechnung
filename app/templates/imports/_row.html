@@ -1,0 +1,43 @@
+{% set ct = cost_types_by_id.get(row.cost_type_id) %}
+{% set owner_needed = ct and ct.kind.value in owner_required_kinds %}
+<tr id="row-{{ row.id }}"
+    hx-post="{{ url_for('imports_row_update', batch_id=batch.id, row_id=row.id) }}"
+    hx-trigger="change" hx-target="#row-{{ row.id }}" hx-swap="outerHTML" hx-include="this"
+    class="{{ 'opacity-50' if not row.include }} {{ 'bg-red-50' if row.parse_error }}">
+  <td class="td text-center">
+    <input type="checkbox" name="include" value="1" {{ 'checked' if row.include }}
+           {{ 'disabled' if row.parse_error }}>
+  </td>
+  <td class="td whitespace-nowrap">{{ row.booking_date | datum }}</td>
+  <td class="td">
+    {{ row.payee }}
+    {% if row.purpose %}<span class="block text-xs text-slate-400">{{ row.purpose[:80] }}</span>{% endif %}
+    {% if row.is_duplicate %}<span class="text-xs text-amber-700">● wahrscheinliches Duplikat</span>{% endif %}
+    {% if row.parse_error %}<span class="block text-xs text-red-600">{{ row.parse_error }}</span>{% endif %}
+    {% if row.suggestion_note %}<span class="block text-xs text-blue-600">{{ row.suggestion_note }}</span>{% endif %}
+  </td>
+  <td class="td text-right whitespace-nowrap {{ 'text-red-600' if row.amount and row.amount < 0 }}">
+    {{ row.amount | euro if row.amount is not none else '–' }}
+  </td>
+  <td class="td">
+    <select name="cost_type_id" class="input py-1 text-xs" {{ 'disabled' if row.parse_error }}>
+      <option value="">– Kostenart wählen –</option>
+      {% for c in cost_types %}
+      <option value="{{ c.id }}" {{ 'selected' if c.id == row.cost_type_id }}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+  </td>
+  <td class="td">
+    {% if owner_needed %}
+    <select name="owner_id" class="input py-1 text-xs">
+      <option value="">– Eigentümer –</option>
+      {% for o in owners %}
+      <option value="{{ o.id }}" {{ 'selected' if o.id == row.owner_id }}>{{ o.code }}</option>
+      {% endfor %}
+    </select>
+    {% else %}
+    <span class="text-xs text-slate-300">–</span>
+    {% endif %}
+  </td>
+</tr>
+{% if request.headers.get('HX-Request') %}{% include "imports/_commit_bar.html" %}{% endif %}

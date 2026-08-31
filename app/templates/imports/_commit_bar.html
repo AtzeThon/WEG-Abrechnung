@@ -1,0 +1,19 @@
+<div id="commit-bar" hx-swap-oob="true"
+     class="card mb-4 flex flex-wrap items-center gap-4 text-sm no-print">
+  <span>{{ counts.included }} von {{ counts.total }} Zeilen einbezogen
+    · {{ counts.ready }} vollständig zugeordnet
+    {% if counts.duplicates %}· <span class="text-amber-700">{{ counts.duplicates }} Duplikat(e)</span>{% endif %}
+  </span>
+  <div class="ml-auto flex gap-2">
+    <form method="post" action="{{ url_for('imports_discard', batch_id=batch.id) }}"
+          onsubmit="return confirm('Import verwerfen? Es werden keine Buchungen angelegt.')">
+      <button class="btn-ghost text-red-600">Verwerfen</button>
+    </form>
+    <form method="post" action="{{ url_for('imports_commit', batch_id=batch.id) }}">
+      <button class="btn-primary" {{ 'disabled' if not can_commit }}
+              title="{{ 'Erst wenn alle einbezogenen Zeilen eine Kostenart (und ggf. Eigentümer) haben' if not can_commit }}">
+        {{ counts.included }} Buchung(en) importieren
+      </button>
+    </form>
+  </div>
+</div>

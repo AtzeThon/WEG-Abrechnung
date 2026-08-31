@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Spalten zuordnen · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-1">Spalten zuordnen</h1>
+<p class="text-sm text-slate-500 mb-4">
+  Datei <span class="font-medium">{{ batch.filename }}</span> ·
+  Trennzeichen <code>{{ dialect.delimiter }}</code> · Kodierung {{ dialect.encoding }} ·
+  Kopfzeile {{ dialect.header_row + 1 }}
+</p>
+
+<form method="post" action="{{ url_for('imports_mapping_save', batch_id=batch.id) }}"
+      class="card space-y-5 mb-6">
+
+  <div>
+    <span class="label">Betrag steht in …</span>
+    <div class="flex flex-wrap gap-4 text-sm" id="amount-mode">
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="amount_mode" value="single" {{ 'checked' if detected_mode == 'single' }}>
+        einer Betragsspalte (mit Vorzeichen)
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="amount_mode" value="soll_haben" {{ 'checked' if detected_mode == 'soll_haben' }}>
+        getrennten Soll-/Haben-Spalten
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="amount_mode" value="betrag_vorzeichen" {{ 'checked' if detected_mode == 'betrag_vorzeichen' }}>
+        Betragsspalte + S/H-Kennzeichen
+      </label>
+    </div>
+  </div>
+
+  {% macro col(field, label, selected, extra_class='') %}
+  <label class="block {{ extra_class }}">
+    <span class="label">{{ label }}</span>
+    <select name="map_{{ field }}" class="input">
+      <option value="">– keine –</option>
+      {% for h in headers %}<option value="{{ h }}" {{ 'selected' if h == selected }}>{{ h }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endmacro %}
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    {{ col('date', 'Buchungsdatum *', mapping.date) }}
+    {{ col('payee', 'Zahlungspartner', mapping.payee) }}
+    {{ col('purpose', 'Verwendungszweck / Buchungstext', mapping.purpose) }}
+    <div data-amount="single betrag_vorzeichen">{{ col('amount', 'Betrag', mapping.amount) }}</div>
+    <div data-amount="soll_haben">{{ col('amount_debit', 'Betrag Soll / Belastung', mapping.amount_debit) }}</div>
+    <div data-amount="soll_haben">{{ col('amount_credit', 'Betrag Haben / Gutschrift', mapping.amount_credit) }}</div>
+    <div data-amount="betrag_vorzeichen">{{ col('sign_column', 'Soll/Haben-Kennzeichen', mapping.sign_column) }}</div>
+  </div>
+
+  <div class="grid sm:grid-cols-3 gap-4">
+    <label class="block">
+      <span class="label">Datumsformat (optional)</span>
+      <input name="date_format" value="{{ dialect.date_format or '' }}" class="input" placeholder="%d.%m.%Y">
+    </label>
+    <label class="block">
+      <span class="label">Kopfzeile (1-basiert)</span>
+      <input name="header_row" type="number" min="1" value="{{ dialect.header_row + 1 }}" class="input">
+    </label>
+    <label class="block">
+      <span class="label">Profilname</span>
+      <input name="profile_name" value="{{ default_name }}" class="input">
+    </label>
+  </div>
+
+  <div class="flex gap-2">
+    <button class="btn-primary">Weiter zur Prüfung</button>
+    <a href="{{ url_for('imports_index') }}" class="btn-ghost">Abbrechen</a>
+  </div>
+</form>
+
+<h2 class="font-medium mb-2 text-sm text-slate-500">Vorschau (erste Zeilen)</h2>
+<div class="card overflow-x-auto">
+  <table class="w-full text-xs">
+    <thead><tr>{% for h in headers %}<th class="th">{{ h }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for r in sample %}
+      <tr>{% for h in headers %}<td class="td">{{ r.get(h, '') }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  (function () {
+    var radios = document.querySelectorAll('#amount-mode input[name=amount_mode]');
+    function sync() {
+      var mode = document.querySelector('#amount-mode input:checked').value;
+      document.querySelectorAll('[data-amount]').forEach(function (el) {
+        el.classList.toggle('hidden', el.dataset.amount.indexOf(mode) === -1);
+      });
+    }
+    radios.forEach(function (r) { r.addEventListener('change', sync); });
+    sync();
+  })();
+</script>
+{% endblock %}
