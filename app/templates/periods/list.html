@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Abrechnungen · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">Abrechnungen</h1>
+  <a href="{{ url_for('periods_new') }}" class="btn-primary">+ Abrechnungsperiode</a>
+</div>
+
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr>
+        <th class="th">Bezeichnung</th><th class="th">Zeitraum</th>
+        <th class="th">Status</th><th class="th"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in periods %}
+      <tr>
+        <td class="td font-medium">
+          <a href="{{ url_for('period_overview', period_id=p.id) }}" class="text-blue-600 hover:underline">{{ p.label }}</a>
+        </td>
+        <td class="td">{{ p.start_date | datum }} – {{ p.end_date | datum }}</td>
+        <td class="td">
+          <span class="text-xs px-2 py-0.5 rounded {{ 'bg-green-100 text-green-800' if p.status.value == 'final' else 'bg-amber-100 text-amber-800' }}">
+            {{ 'final' if p.status.value == 'final' else 'Entwurf' }}
+          </span>
+        </td>
+        <td class="td text-right whitespace-nowrap">
+          <a href="{{ url_for('period_overview', period_id=p.id) }}" class="text-blue-600 hover:underline">Übersicht</a>
+          <a href="{{ url_for('periods_edit', period_id=p.id) }}" class="ml-3 text-blue-600 hover:underline">Bearbeiten</a>
+          <form method="post" action="{{ url_for('periods_delete', period_id=p.id) }}" class="inline"
+                onsubmit="return confirm('Periode „{{ p.label }}“ löschen?')">
+            <button class="ml-3 text-red-600 hover:underline">Löschen</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td class="td text-slate-400" colspan="4">Noch keine Abrechnungsperiode angelegt.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

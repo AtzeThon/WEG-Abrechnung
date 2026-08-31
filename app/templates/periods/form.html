@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}{{ period.label if period else 'Neue Abrechnungsperiode' }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">
+  {{ 'Abrechnungsperiode bearbeiten' if period else 'Neue Abrechnungsperiode' }}
+</h1>
+
+<form method="post"
+      action="{{ url_for('periods_update', period_id=period.id) if period else url_for('periods_create') }}"
+      class="space-y-6">
+
+  <div class="card max-w-xl space-y-4">
+    <h2 class="font-medium">Stammdaten</h2>
+    {{ field('label', 'Bezeichnung', period.label if period else 'Abrechnung ' ~ (today.year if today else ''), required=True) }}
+    <div class="grid grid-cols-2 gap-4">
+      {{ field('start_date', 'Zeitraum von', (period.start_date | datum) if period else '', required=True, hint='TT.MM.JJJJ') }}
+      {{ field('end_date', 'Zeitraum bis', (period.end_date | datum) if period else '', required=True, hint='TT.MM.JJJJ') }}
+    </div>
+    {{ field('reserve_opening_balance', 'Rücklagen-Anfangssaldo (gesamt)',
+             (period.reserve_opening_balance | dezimal) if period else '0,00',
+             hint='wird von der Engine anteilig nach MEA verteilt') }}
+  </div>
+
+  {% if period %}
+  <div class="card">
+    <h2 class="font-medium mb-3">Saldovortrag Hausgeld je Eigentümer</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for o in owners %}
+      <label class="block">
+        <span class="label">{{ o.code }} {{ o.name }}</span>
+        <input class="input text-right" name="carryover_{{ o.id }}"
+               value="{{ carryover.get(o.id, 0) | dezimal }}">
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="font-medium mb-1">Zähler / Direkteingaben</h2>
+    <p class="text-xs text-slate-400 mb-3">
+      Beträge je Eigentümer aus externen Verbrauchsabrechnungen (z. B. Heizkostenabrechnung).
+      Feld leer lassen = kein Wert.
+    </p>
+    {% if zaehler_cost_types %}
+    <div class="overflow-x-auto">
+      <table class="text-sm">
+        <thead><tr><th class="th">Kostenart</th>{% for o in owners %}<th class="th text-right">{{ o.code }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for ct in zaehler_cost_types %}
+          <tr>
+            <td class="td">{{ ct.name }}</td>
+            {% for o in owners %}
+            {% set ov = overrides.get((ct.id, o.id)) %}
+            <td class="td">
+              <input class="input text-right w-28" name="override_{{ ct.id }}_{{ o.id }}"
+                     value="{{ ov | dezimal if ov is not none else '' }}">
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-400">Keine Kostenart mit Umlageschlüssel „Zähler / Direkteingabe“.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="flex gap-2">
+    <button class="btn-primary">Speichern</button>
+    <a href="{{ url_for('periods_list') }}" class="btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

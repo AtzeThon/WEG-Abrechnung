@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}{{ period.label }} · {{ APP_NAME }}{% endblock %}
+{% set codes = result.owner_order %}
+{% macro money(v) %}<span class="{{ 'text-red-600' if v < 0 }}">{{ v | euro }}</span>{% endmacro %}
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-xl font-semibold">{{ period.label }}</h1>
+    <p class="text-sm text-slate-500">
+      {{ period.start_date | datum }} – {{ period.end_date | datum }} ·
+      <span class="{{ 'text-green-700' if period.status.value == 'final' else 'text-amber-600' }}">
+        {{ 'final' if period.status.value == 'final' else 'Entwurf' }}
+      </span>
+    </p>
+  </div>
+  <div class="flex gap-2 no-print">
+    <a href="{{ url_for('periods_edit', period_id=period.id) }}" class="btn-ghost border border-slate-300">Anfangswerte / Zähler</a>
+    <form method="post" action="{{ url_for('periods_set_status', period_id=period.id) }}">
+      <input type="hidden" name="target" value="{{ 'draft' if period.status.value == 'final' else 'final' }}">
+      <button class="btn-ghost border border-slate-300">
+        {{ 'Auf Entwurf zurücksetzen' if period.status.value == 'final' else 'Als final markieren' }}
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if url_has(request, 'owner_statement') %}
+<div class="mb-6 flex flex-wrap gap-2 no-print">
+  <span class="text-sm text-slate-500 self-center">Einzelabrechnung:</span>
+  {% for code in codes %}
+  <a href="{{ url_for('owner_statement', period_id=period.id, code=code) }}"
+     class="btn-ghost border border-slate-300">{{ code }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Kostenübersicht -->
+<section class="card mb-6 overflow-x-auto">
+  <h2 class="font-medium mb-3">Kostenübersicht (Kostenart × Eigentümer)</h2>
+  <table class="w-full text-sm">
+    <thead>
+      <tr>
+        <th class="th">Kostenart</th><th class="th">Umlage</th>
+        <th class="th text-right">Gesamt WEG</th>
+        {% for code in codes %}<th class="th text-right">{{ code }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for group, items in cost_groups.items() %}
+      <tr class="bg-slate-50"><td class="td font-medium" colspan="{{ 3 + codes|length }}">{{ group }}</td></tr>
+      {% for ct in items %}
+      <tr>
+        <td class="td">{{ ct.name }}{% if ct.supplier %}<span class="block text-xs text-slate-400">{{ ct.supplier }}</span>{% endif %}</td>
+        <td class="td text-xs text-slate-500">{{ ct.strategy_label }}</td>
+        <td class="td text-right">{{ ct.weg_total | euro }}</td>
+        {% for code in codes %}<td class="td text-right">{{ ct.share(code) | euro }}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="font-semibold border-t-2 border-slate-300">
+        <td class="td" colspan="2">Summe Kostenanteil</td>
+        <td class="td text-right">{{ result.cost_share_total | euro }}</td>
+        {% for code in codes %}
+        <td class="td text-right">{{ result.owner_result(code).cost_share_total | euro }}</td>
+        {% endfor %}
+      </tr>
+    </tfoot>
+  </table>
+</section>
+
+<!-- Hausgeldübersicht -->
+<section class="card mb-6 overflow-x-auto">
+  <h2 class="font-medium mb-3">Hausgeldübersicht</h2>
+  <table class="w-full text-sm">
+    <thead>
+      <tr>
+        <th class="th">Eigentümer</th>
+        <th class="th text-right">Saldovortrag</th>
+        <th class="th text-right">Sonderumlage</th>
+        <th class="th text-right">./. Investition</th>
+        <th class="th text-right">Hausgeld gezahlt</th>
+        <th class="th text-right">./. Kostenanteil</th>
+        <th class="th text-right">Guthaben / Nachzahlung</th>
+        <th class="th text-right">Endsaldo Hausgeld</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for code in codes %}
+      {% set r = result.owner_result(code) %}
+      <tr>
+        <td class="td font-medium">{{ code }}</td>
+        <td class="td text-right">{{ r.carryover | euro }}</td>
+        <td class="td text-right">{{ r.sonderumlage_paid | euro }}</td>
+        <td class="td text-right">{{ r.investition_share | euro }}</td>
+        <td class="td text-right">{{ r.hausgeld_paid | euro }}</td>
+        <td class="td text-right">{{ r.cost_share_total | euro }}</td>
+        <td class="td text-right {{ 'text-red-600' if r.guthaben < 0 else 'text-green-700' }}">{{ r.guthaben | euro }}</td>
+        <td class="td text-right font-medium">{{ money(r.hausgeld_endsaldo) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="font-semibold border-t-2 border-slate-300">
+        <td class="td">Gesamt</td>
+        <td class="td text-right">{{ result.owners.values() | sum(attribute='carryover') | euro }}</td>
+        <td class="td text-right">{{ result.sonderumlage_total | euro }}</td>
+        <td class="td text-right">{{ result.investition_total | euro }}</td>
+        <td class="td text-right">{{ result.hausgeld_paid_total | euro }}</td>
+        <td class="td text-right">{{ result.cost_share_total | euro }}</td>
+        <td class="td"></td>
+        <td class="td"></td>
+      </tr>
+    </tfoot>
+  </table>
+</section>
+
+<!-- Rücklage + Saldo gesamt -->
+<div class="grid lg:grid-cols-2 gap-6">
+  <section class="card overflow-x-auto">
+    <h2 class="font-medium mb-3">Rücklagenübersicht</h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr>
+          <th class="th">Eigentümer</th>
+          <th class="th text-right">Anfangssaldo</th>
+          <th class="th text-right">Zuführung</th>
+          <th class="th text-right">Entnahme</th>
+          <th class="th text-right">Endsaldo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for code in codes %}
+        {% set r = result.owner_result(code) %}
+        <tr>
+          <td class="td font-medium">{{ code }}</td>
+          <td class="td text-right">{{ r.reserve_opening | euro }}</td>
+          <td class="td text-right">{{ r.reserve_zufuehrung | euro }}</td>
+          <td class="td text-right">{{ r.reserve_entnahme | euro }}</td>
+          <td class="td text-right font-medium">{{ r.reserve_endsaldo | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="font-semibold border-t-2 border-slate-300">
+          <td class="td">Gesamt</td>
+          <td class="td text-right">{{ result.reserve_opening_total | euro }}</td>
+          <td class="td" colspan="2"></td>
+          <td class="td text-right">{{ result.reserve_endsaldo_total | euro }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
+
+  <section class="card overflow-x-auto">
+    <h2 class="font-medium mb-3">Saldo gesamt je Eigentümer</h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr>
+          <th class="th">Eigentümer</th>
+          <th class="th text-right">Endsaldo Hausgeld</th>
+          <th class="th text-right">Endsaldo Rücklage</th>
+          <th class="th text-right">Saldo gesamt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for code in codes %}
+        {% set r = result.owner_result(code) %}
+        <tr>
+          <td class="td font-medium">{{ code }}</td>
+          <td class="td text-right">{{ money(r.hausgeld_endsaldo) }}</td>
+          <td class="td text-right">{{ money(r.reserve_endsaldo) }}</td>
+          <td class="td text-right font-semibold">{{ money(r.total_saldo) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<p class="text-xs text-slate-400 mt-4">
+  Erstattungen/Nachzahlungen aus der Vorperiode werden derzeit nicht in den Endsaldo eingerechnet.
+</p>
+{% endblock %}
