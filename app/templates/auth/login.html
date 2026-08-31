@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Anmelden · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-16 bg-white rounded-lg shadow p-6">
+  <h1 class="text-lg font-semibold mb-4">{{ APP_NAME }}</h1>
+  {% if error %}
+  <p class="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('login_submit') }}" class="space-y-3">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label class="block text-sm">
+      <span class="text-slate-600">Benutzername</span>
+      <input name="username" autofocus required class="mt-1 w-full border border-slate-300 rounded px-3 py-2">
+    </label>
+    <label class="block text-sm">
+      <span class="text-slate-600">Passwort</span>
+      <input name="password" type="password" required class="mt-1 w-full border border-slate-300 rounded px-3 py-2">
+    </label>
+    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-2 text-sm font-medium">Anmelden</button>
+  </form>
+</div>
+{% endblock %}

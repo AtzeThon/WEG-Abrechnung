@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual env
+.venv/
+venv/
+
+# Application data
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+
+# Backups
+backups/
+*.bak
+
+# Secrets / local config
+.env
+.env.local
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Build tooling
+tailwind/tailwindcss*.exe
+tailwind/tailwindcss
+node_modules/
+
+# Scratch / analysis
+/scratch/

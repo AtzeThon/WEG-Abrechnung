@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ APP_NAME }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+  <script src="{{ url_for('static', path='htmx.min.js') }}" defer></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+{% if request.session.get('user') %}
+<header class="bg-white border-b border-slate-200">
+  <nav class="max-w-6xl mx-auto px-4 h-14 flex items-center gap-6 text-sm">
+    <a href="{{ url_for('dashboard') }}" class="font-semibold text-slate-900">{{ APP_NAME }}</a>
+    <a href="{{ url_for('dashboard') }}" class="hover:text-blue-700">Übersicht</a>
+    {% if url_has('owners_list') %}<a href="{{ url_for('owners_list') }}" class="hover:text-blue-700">Eigentümer</a>{% endif %}
+    {% if url_has('accounts_list') %}<a href="{{ url_for('accounts_list') }}" class="hover:text-blue-700">Konten</a>{% endif %}
+    {% if url_has('cost_types_list') %}<a href="{{ url_for('cost_types_list') }}" class="hover:text-blue-700">Kostenarten</a>{% endif %}
+    {% if url_has('transactions_list') %}<a href="{{ url_for('transactions_list') }}" class="hover:text-blue-700">Buchungen</a>{% endif %}
+    {% if url_has('periods_list') %}<a href="{{ url_for('periods_list') }}" class="hover:text-blue-700">Abrechnungen</a>{% endif %}
+    <form method="post" action="{{ url_for('logout') }}" class="ml-auto">
+      <button class="text-slate-500 hover:text-red-600">Abmelden ({{ request.session.get('user') }})</button>
+    </form>
+  </nav>
+</header>
+{% endif %}
+<main class="max-w-6xl mx-auto px-4 py-6">
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

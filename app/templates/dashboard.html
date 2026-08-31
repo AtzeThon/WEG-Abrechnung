@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Übersicht · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Übersicht</h1>
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {% set cards = [
+    ('owners_list', 'Eigentümer', 'Stammdaten der Eigentümer und Miteigentumsanteile.'),
+    ('accounts_list', 'Konten', 'Girokonto und Rücklagenkonto.'),
+    ('cost_types_list', 'Kostenarten', 'Kategorien, fachliche Typen und Umlageschlüssel.'),
+    ('transactions_list', 'Buchungen', 'Kontobewegungen erfassen und bearbeiten.'),
+    ('periods_list', 'Abrechnungen', 'Wirtschaftsjahre, Übersicht und Einzelabrechnungen.'),
+  ] %}
+  {% for name, title, desc in cards %}
+  <a href="{{ url_for(name) if url_has(name) else '#' }}"
+     class="block bg-white rounded-lg shadow p-4 hover:shadow-md transition {{ 'opacity-40 pointer-events-none' if not url_has(name) }}">
+    <div class="font-medium text-slate-900">{{ title }}</div>
+    <p class="text-sm text-slate-500 mt-1">{{ desc }}</p>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

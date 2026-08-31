@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weg-abrechnung"
+version = "0.1.0"
+description = "Hausgeld- und Betriebskostenabrechnung fuer eine kleine WEG (4 Einheiten), selbst gehostet auf einem Raspberry Pi."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "itsdangerous>=2.2",
+    "bcrypt>=4.1",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "babel>=2.15",
+]
+
+[project.optional-dependencies]
+pdf = [
+    "weasyprint>=62",
+]
+dev = [
+    "pytest>=8.2",
+    "httpx>=0.27",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+weg-admin = "app.cli:main"
+
+[tool.setuptools]
+packages = ["app", "app.models", "app.allocation", "app.routers", "app.services"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# UP042: `class X(str, Enum)` ist bewusst gewählt (kompatibel, breit genutzt).
+ignore = ["E501", "UP042", "B008"]  # B008: Depends()/Form() in Defaults ist FastAPI-Idiom
