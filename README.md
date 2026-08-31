@@ -12,7 +12,7 @@ Excel geführte Jahresabrechnung. Läuft dauerhaft auf einem Raspberry Pi.
 | Datenbank  | SQLite (eine Datei, WAL-Modus) |
 | Frontend   | Server-Rendering mit Jinja2 + htmx, Tailwind CSS (Standalone-CLI, kein Node-Build) |
 | PDF        | WeasyPrint (gleiche HTML/CSS-Vorlage wie die Web-Ansicht) |
-| Auth       | ein Verwalter-Login (signiertes Session-Cookie) |
+| Auth       | standardmäßig offen (Betrieb im vertrauten Netz); optionaler Verwalter-Login (`WEG_REQUIRE_LOGIN=true`) |
 | Locale     | Deutsch (`de_DE`) – Komma als Dezimaltrenner, `TT.MM.JJJJ`, Euro |
 
 ## Entwicklung
@@ -22,12 +22,10 @@ python -m venv .venv
 .venv/Scripts/pip install -e ".[dev]"          # Windows
 # .venv/bin/pip install -e ".[dev]"            # Linux/macOS
 
-cp .env.example .env                            # WEG_SECRET_KEY setzen
+cp .env.example .env
 
 .venv/Scripts/alembic upgrade head              # Schema anlegen
-.venv/Scripts/python -m app.cli create-admin admin
-
-.venv/Scripts/uvicorn app.main:app --reload     # http://127.0.0.1:8000
+.venv/Scripts/uvicorn app.main:app --reload     # http://127.0.0.1:8000  (ohne Login)
 ```
 
 ### Tests

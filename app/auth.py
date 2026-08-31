@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models import User
 from app.templating import templates
@@ -14,6 +15,7 @@ from app.templating import templates
 router = APIRouter(tags=["auth"])
 
 SESSION_USER_KEY = "user"
+ANONYMOUS = "Verwaltung"
 
 
 def current_user(request: Request) -> str | None:
@@ -21,8 +23,14 @@ def current_user(request: Request) -> str | None:
 
 
 def require_login(request: Request) -> str:
-    """Dependency für geschützte Routen. Leitet nicht um, sondern signalisiert
-    dem aufrufenden Router über eine Exception – hier einfach 303 zur Loginseite."""
+    """Dependency für geschützte Routen.
+
+    Ist ``WEG_REQUIRE_LOGIN`` nicht gesetzt (Standard), ist die Anwendung offen
+    zugänglich. Andernfalls wird ohne gültige Session per 303 zur Loginseite
+    weitergeleitet.
+    """
+    if not settings.require_login:
+        return current_user(request) or ANONYMOUS
     user = current_user(request)
     if not user:
         raise _RedirectToLogin(request.url.path)
@@ -45,7 +53,7 @@ def install_auth(app) -> None:
 
 @router.get("/login", response_class=HTMLResponse, name="login_form")
 def login_form(request: Request, next: str = "/"):
-    if current_user(request):
+    if not settings.require_login or current_user(request):
         return RedirectResponse(next or "/", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(request, "auth/login.html", {"next": next, "error": None})
 

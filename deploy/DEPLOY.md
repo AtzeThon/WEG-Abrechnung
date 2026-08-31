@@ -35,27 +35,35 @@ python3 -m venv .venv
 
 ```bash
 cp .env.example .env
-# Schlüssel erzeugen:
-.venv/bin/python -c "import secrets; print('WEG_SECRET_KEY=' + secrets.token_urlsafe(48))" >> .env
 ```
 
-`.env` anpassen – mindestens:
+`.env` anpassen:
 
 ```ini
-WEG_SECRET_KEY=<der erzeugte Wert, doppelte Zeile oben entfernen>
-WEG_SECURE_COOKIES=true
 WEG_DATABASE_PATH=/opt/weg-abrechnung/data/weg.db
+# Standard: kein Login (App im vertrauten Netz, nur über Tailscale erreichbar).
+WEG_REQUIRE_LOGIN=false
+```
+
+Wenn doch ein Login gewünscht ist:
+
+```ini
+WEG_REQUIRE_LOGIN=true
+WEG_SECURE_COOKIES=true
+WEG_SECRET_KEY=<siehe unten>
 ```
 
 ```bash
+.venv/bin/python -c "import secrets; print('WEG_SECRET_KEY=' + secrets.token_urlsafe(48))" >> .env
 mkdir -p data backups
 chown -R weg:weg /opt/weg-abrechnung
 ```
 
-## 4. Datenbank & Verwalter-Account
+## 4. Datenbank (und optional Verwalter-Account)
 
 ```bash
 sudo -u weg .venv/bin/alembic upgrade head
+# nur bei WEG_REQUIRE_LOGIN=true:
 sudo -u weg .venv/bin/python -m app.cli create-admin verwalter
 ```
 
@@ -138,5 +146,6 @@ systemctl restart weg-abrechnung        # führt automatisch 'alembic upgrade he
 |---|---|
 | 502 über Caddy | `systemctl status weg-abrechnung`, `journalctl -u weg-abrechnung -e` |
 | PDF-Export meldet Fehler | `libpango*` installiert? `.venv/bin/python -c "import weasyprint"` |
+| Login-Seite trotz `WEG_REQUIRE_LOGIN=false` | Dienst nach `.env`-Änderung neu gestartet? |
 | Login schlägt fehl / Session weg | `WEG_SECRET_KEY` gesetzt? `WEG_SECURE_COOKIES=true` nur mit HTTPS |
 | „database is locked“ | nur ein Dienst darf schreiben; WAL ist aktiv, Backups per `.backup` (nicht kopieren) |

@@ -23,8 +23,11 @@ class Settings(BaseSettings):
     database_path: Path = BASE_DIR / "data" / "weg.db"
 
     # --- Sicherheit --------------------------------------------------------- #
-    # MUSS in Produktion gesetzt werden (WEG_SECRET_KEY). Der Default erlaubt
-    # nur lokale Entwicklung und wird beim Start protokolliert.
+    # Login komplett abschalten (Standard): die Anwendung läuft im vertrauten
+    # Netz (z. B. nur über Tailscale erreichbar). Auf true setzen, wenn doch ein
+    # Verwalter-Login gewünscht ist: WEG_REQUIRE_LOGIN=true
+    require_login: bool = False
+    # MUSS gesetzt werden, wenn require_login=true (WEG_SECRET_KEY).
     secret_key: str = "dev-only-insecure-secret-change-me"
     session_max_age: int = 60 * 60 * 12  # 12 Stunden
     # In Produktion (HTTPS über Caddy) auf true setzen: WEG_SECURE_COOKIES=true

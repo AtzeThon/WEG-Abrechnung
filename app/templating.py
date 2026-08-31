@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
 
+from app.config import settings
 from app.locale import register_filters
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -13,6 +14,7 @@ TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 register_filters(templates.env)
 templates.env.globals["APP_NAME"] = "WEG-Abrechnung"
+templates.env.globals["AUTH_ENABLED"] = settings.require_login
 
 
 def url_has(request, name: str) -> bool:

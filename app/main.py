@@ -30,9 +30,9 @@ def create_app() -> FastAPI:
         https_only=settings.secure_cookies,
     )
 
-    if settings.is_secret_key_insecure:
+    if settings.require_login and settings.is_secret_key_insecure:
         logger.warning(
-            "WEG_SECRET_KEY ist nicht gesetzt – nur fuer lokale Entwicklung zulaessig."
+            "WEG_REQUIRE_LOGIN=true, aber WEG_SECRET_KEY ist nicht gesetzt – bitte setzen."
         )
 
     STATIC_DIR.mkdir(exist_ok=True)
