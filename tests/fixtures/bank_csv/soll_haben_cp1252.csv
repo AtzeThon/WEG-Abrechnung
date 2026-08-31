@@ -1,0 +1,8 @@
+Umsatzanzeige Girokonto
+Konto;DE00 0000 0000 0000 0000 00
+Zeitraum;01.08.2025;31.08.2025
+
+Buchungstag;Wertstellung;Erläuterung;Begünstigter/Auftraggeber;Betrag Soll;Betrag Haben;Währung
+03.08.2025;03.08.2025;Dauerauftrag;Hausmeisterdienst;83,18;;EUR
+07.08.2025;07.08.2025;Gutschrift;Eigentümer 2;;300,00;EUR
+15.08.2025;15.08.2025;Lastschrift;Kommunalkasse;295,59;;EUR

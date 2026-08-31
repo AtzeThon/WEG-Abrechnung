@@ -4,3 +4,6 @@
 *.jpg binary
 *.pdf binary
 *.exe binary
+
+# Test-Fixtures: Byte-genau erhalten (Encoding cp1252/BOM, CRLF)
+tests/fixtures/bank_csv/** binary

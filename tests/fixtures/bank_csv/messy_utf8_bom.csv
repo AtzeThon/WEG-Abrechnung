@@ -1,0 +1,7 @@
+﻿Buchungstag;Zahlungspartner;Verwendungszweck;Betrag
+
+10.08.2025;Bank;Kontofuehrungsgebuehr;-9,90;IGNORIERT
+kein-datum;Foo;Bar;-1,00
+11.08.2025;Baz;Kaputt;abc
+12.08.2025;Quux;OK positiv;+1.234,56
+
