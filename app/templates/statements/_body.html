@@ -1,0 +1,106 @@
+{# Inhalt einer Einzelabrechnung. Erwartet: owner, cost_groups, result, period, year, pdf #}
+{% macro money(v) %}<span class="{{ 'text-red-600' if v < 0 }}">{{ v | euro }}</span>{% endmacro %}
+
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-xl font-semibold">Jahresabrechnung {{ year }}</h1>
+    <p class="text-sm text-slate-600">
+      Wirtschaftsjahr {{ period.start_date | datum }} – {{ period.end_date | datum }}
+    </p>
+    <p class="mt-2 text-sm">
+      <span class="font-medium">{{ owner.code }}{% if owner.name %} – {{ owner.name }}{% endif %}</span><br>
+      Miteigentumsanteil: {{ owner.mea | dezimal }} / {{ result.total_mea | dezimal }}
+      ({{ owner.mea_fraction | prozent }})
+    </p>
+  </div>
+  {% if not pdf %}
+  <div class="flex gap-2 no-print">
+    <a href="{{ url_for('owner_statement_pdf', period_id=period.id, code=owner.code) }}"
+       class="btn-primary">PDF herunterladen</a>
+    <a href="{{ url_for('period_overview', period_id=period.id) }}" class="btn-ghost">Zur Übersicht</a>
+  </div>
+  {% endif %}
+</div>
+
+<table class="w-full text-sm mb-6">
+  <thead>
+    <tr>
+      <th class="th">Kostenart / Position</th>
+      <th class="th">Lieferant</th>
+      <th class="th text-right">Gesamtkosten (WEG)</th>
+      <th class="th">Umlageschlüssel</th>
+      <th class="th text-right">Ihr Anteil</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for group, items in cost_groups.items() %}
+    <tr class="bg-slate-50"><td class="td font-medium" colspan="5">{{ group }}</td></tr>
+    {% for ct in items %}
+    <tr>
+      <td class="td">{{ ct.name }}</td>
+      <td class="td text-slate-500">{{ ct.supplier }}</td>
+      <td class="td text-right">{{ ct.weg_total | euro }}</td>
+      <td class="td text-xs text-slate-500">{{ ct.strategy_label }}</td>
+      <td class="td text-right">{{ ct.share(owner.code) | euro }}</td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="font-semibold border-t-2 border-slate-300">
+      <td class="td" colspan="4">Summe Kosten</td>
+      <td class="td text-right">{{ owner.cost_share_total | euro }}</td>
+    </tr>
+    <tr>
+      <td class="td" colspan="4">Geleistete Hausgeldzahlungen</td>
+      <td class="td text-right">{{ owner.hausgeld_paid | euro }}</td>
+    </tr>
+    <tr class="text-base font-bold">
+      <td class="td" colspan="4">{{ 'Guthaben' if owner.guthaben >= 0 else 'Nachzahlung' }}</td>
+      <td class="td text-right {{ 'text-green-700' if owner.guthaben >= 0 else 'text-red-600' }}">
+        {{ owner.guthaben | euro }}
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<div class="grid sm:grid-cols-2 gap-6">
+  <div class="card">
+    <h2 class="font-medium mb-2">Hausgeldkonto</h2>
+    <table class="w-full text-sm">
+      <tbody>
+        <tr><td class="td">Saldovortrag</td><td class="td text-right">{{ owner.carryover | euro }}</td></tr>
+        <tr><td class="td">Sonderumlage (eingezahlt)</td><td class="td text-right">{{ owner.sonderumlage_paid | euro }}</td></tr>
+        <tr><td class="td">Anteil investive Ausgaben</td><td class="td text-right">./. {{ owner.investition_share | euro }}</td></tr>
+        <tr><td class="td">{{ 'Guthaben' if owner.guthaben >= 0 else 'Nachzahlung' }} {{ year }}</td>
+            <td class="td text-right">{{ owner.guthaben | euro }}</td></tr>
+        <tr class="font-semibold border-t-2 border-slate-300">
+          <td class="td">Endsaldo Hausgeld</td><td class="td text-right">{{ money(owner.hausgeld_endsaldo) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2 class="font-medium mb-2">Instandhaltungsrücklage</h2>
+    <table class="w-full text-sm">
+      <tbody>
+        <tr><td class="td">Anfangssaldo (Anteil)</td><td class="td text-right">{{ owner.reserve_opening | euro }}</td></tr>
+        <tr><td class="td">Zuführung</td><td class="td text-right">{{ owner.reserve_zufuehrung | euro }}</td></tr>
+        <tr><td class="td">Entnahme</td><td class="td text-right">./. {{ owner.reserve_entnahme | euro }}</td></tr>
+        <tr class="font-semibold border-t-2 border-slate-300">
+          <td class="td">Endsaldo Rücklage</td><td class="td text-right">{{ owner.reserve_endsaldo | euro }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mt-6 flex items-center justify-between">
+  <span class="font-medium">Saldo gesamt (Hausgeld + Rücklage)</span>
+  <span class="text-lg font-bold">{{ money(owner.total_saldo) }}</span>
+</div>
+
+<p class="text-xs text-slate-400 mt-4">
+  {% if period.status.value != 'final' %}<span class="text-amber-600">Entwurf – noch nicht beschlossen. </span>{% endif %}
+  Erstattungen/Nachzahlungen aus der Vorperiode sind in dieser Darstellung nicht berücksichtigt.
+</p>

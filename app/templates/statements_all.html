@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Einzelabrechnungen {{ year }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+{% for s in statements %}
+<section class="{{ 'statement-page' if not loop.first }}">
+  {% with owner=s.owner, cost_groups=s.cost_groups, result=result, period=period, year=year, pdf=True %}
+    {% include "statements/_body.html" %}
+  {% endwith %}
+</section>
+{% endfor %}
+{% endblock %}

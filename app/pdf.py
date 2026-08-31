@@ -19,6 +19,7 @@ header, nav { display: none !important; }
 main { max-width: none; padding: 0; margin: 0; }
 table { page-break-inside: auto; }
 tr { page-break-inside: avoid; }
+.statement-page { page-break-before: always; }
 """
 
 

@@ -25,15 +25,15 @@
   </div>
 </div>
 
-{% if url_has(request, 'owner_statement') %}
-<div class="mb-6 flex flex-wrap gap-2 no-print">
+<div class="mb-6 flex flex-wrap items-center gap-2 no-print">
   <span class="text-sm text-slate-500 self-center">Einzelabrechnung:</span>
   {% for code in codes %}
   <a href="{{ url_for('owner_statement', period_id=period.id, code=code) }}"
      class="btn-ghost border border-slate-300">{{ code }}</a>
   {% endfor %}
+  <a href="{{ url_for('all_statements_pdf', period_id=period.id) }}"
+     class="btn-primary ml-2">Alle als PDF</a>
 </div>
-{% endif %}
 
 <!-- Kostenübersicht -->
 <section class="card mb-6 overflow-x-auto">

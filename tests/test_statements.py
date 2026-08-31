@@ -41,3 +41,20 @@ def test_statement_pdf_route(client, db_session):
         # WeasyPrint/GTK nicht installiert -> saubere Weiterleitung mit Hinweis
         assert r.status_code == 303
         assert "/eigentuemer/E1" in r.headers["location"]
+
+
+def test_alle_einzelabrechnungen_pdf(client, db_session):
+    period = _period(db_session)
+    r = client.get(f"/abrechnungen/{period.id}/einzelabrechnungen.pdf", follow_redirects=False)
+    if r.status_code == 200:
+        assert r.headers["content-type"] == "application/pdf"
+        assert "Einzelabrechnungen_2026.pdf" in r.headers["content-disposition"]
+    else:
+        assert r.status_code == 303
+
+
+def test_uebersicht_verlinkt_alle_als_pdf(client, db_session):
+    period = _period(db_session)
+    r = client.get(f"/abrechnungen/{period.id}")
+    assert "Alle als PDF" in r.text
+    assert f"/abrechnungen/{period.id}/einzelabrechnungen.pdf" in r.text
