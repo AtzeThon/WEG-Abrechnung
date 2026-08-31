@@ -13,7 +13,10 @@ AMOUNT_SIGN_COLUMN = "betrag_vorzeichen"  # Betragsspalte + separate S/H-Kennzei
 AMOUNT_MODES = (AMOUNT_SINGLE, AMOUNT_SOLL_HABEN, AMOUNT_SIGN_COLUMN)
 
 # Zielfelder des Mappings (Reihenfolge = Anzeige im Assistenten)
-TARGET_FIELDS = ("date", "payee", "purpose", "amount", "amount_debit", "amount_credit", "sign_column")
+TARGET_FIELDS = (
+    "date", "payee", "purpose", "amount", "amount_debit", "amount_credit",
+    "sign_column", "category", "owner",
+)
 TARGET_LABELS = {
     "date": "Buchungsdatum",
     "payee": "Zahlungspartner",
@@ -22,6 +25,8 @@ TARGET_LABELS = {
     "amount_debit": "Betrag Soll / Belastung",
     "amount_credit": "Betrag Haben / Gutschrift",
     "sign_column": "Soll/Haben-Kennzeichen",
+    "category": "Kategorie → Kostenart (Vorschlag)",
+    "owner": "Spalte mit Eigentümer-Kürzel (Vorschlag)",
 }
 
 
@@ -44,6 +49,9 @@ class ColumnMapping:
     amount_debit: str | None = None
     amount_credit: str | None = None
     sign_column: str | None = None
+    # optional: Spalten mit fertiger fachlicher Zuordnung (nur Vorschlag)
+    category: str | None = None      # -> Kostenart per Namensabgleich
+    owner: str | None = None         # -> Eigentümer per Kürzel
 
     def amount_ready(self, mode: str) -> bool:
         if mode == AMOUNT_SOLL_HABEN:
@@ -68,6 +76,8 @@ class ParsedRow:
     amount: Decimal | None
     raw: dict[str, str]
     errors: tuple[str, ...] = ()
+    category: str = ""      # Rohwert der Kategorie-Spalte (falls gemappt)
+    owner_hint: str = ""    # Rohwert der Eigentümer-Spalte (falls gemappt)
 
     @property
     def ok(self) -> bool:

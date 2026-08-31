@@ -49,6 +49,16 @@
     <div data-amount="betrag_vorzeichen">{{ col('sign_column', 'Soll/Haben-Kennzeichen', mapping.sign_column) }}</div>
   </div>
 
+  <p class="text-xs text-slate-400">
+    Optional: Wenn deine CSV bereits Spalten mit Kategorie und Eigentümer enthält, werden
+    diese als Vorschlag übernommen (Kategorie wird per Namensabgleich einer Kostenart
+    zugeordnet).
+  </p>
+  <div class="grid sm:grid-cols-2 gap-4">
+    {{ col('category', 'Kategorie-Spalte → Kostenart', mapping.category) }}
+    {{ col('owner', 'Spalte mit Eigentümer-Kürzel (E1 …)', mapping.owner) }}
+  </div>
+
   <div class="grid sm:grid-cols-3 gap-4">
     <label class="block">
       <span class="label">Datumsformat (optional)</span>

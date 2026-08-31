@@ -113,6 +113,30 @@ def test_zweiter_import_erkennt_alle_als_duplikat(client, db_session, base):
     assert "disabled" in review.text  # 0 einbezogen -> Commit gesperrt
 
 
+def test_kategorie_und_eigentuemer_spalte_werden_vorbelegt(client, db_session, base):
+    _upload(client, base["giro"].id, "finanztool_kategorie_cp1252.csv")
+    batch = db_session.scalar(select(ImportBatch))
+    client.post(f"/import/{batch.id}/mapping", data={
+        "amount_mode": "single",
+        "map_date": "Wertstellung", "map_payee": "Empfänger/Auftraggeber",
+        "map_purpose": "Verwendungszweck", "map_amount": "Betrag",
+        "map_category": "Kategorie", "map_owner": "Frei 3",
+        "header_row": "1", "profile_name": "Finanztool",
+    })
+    db_session.expire_all()
+    batch = db_session.scalar(select(ImportBatch))
+
+    by_purpose = {r.line_no: r for r in batch.rows}
+    hausgeld_rows = [r for r in batch.rows if r.raw.get("Kategorie") == "Hausgeld"]
+    assert hausgeld_rows and all(r.cost_type_id == base["hausgeld"].id for r in hausgeld_rows)
+    assert all(r.owner_id == base["e1"].id for r in hausgeld_rows if r.raw.get("Frei 3") == "E1")
+
+    bank_row = next(r for r in batch.rows if r.raw.get("Kategorie") == "Bankgebühren")
+    assert bank_row.cost_type_id is None  # keine passende Kostenart -> kein Vorschlag
+    assert "Spalte" in hausgeld_rows[0].suggestion_note
+    assert by_purpose  # sanity
+
+
 def test_historien_vorschlag(client, db_session, base):
     db_session.add(Transaction(
         account_id=base["giro"].id, booking_date=__import__("datetime").date(2025, 1, 1),

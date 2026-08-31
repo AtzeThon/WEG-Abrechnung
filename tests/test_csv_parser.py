@@ -121,8 +121,45 @@ def test_header_signature_stabil_gegen_reihenfolge_und_umlaute():
 
 @pytest.mark.parametrize("name", [
     "generic_semikolon_utf8.csv", "soll_haben_cp1252.csv", "sign_column_bom.csv", "messy_utf8_bom.csv",
+    "finanztool_kategorie_cp1252.csv",
 ])
 def test_parse_liefert_immer_ein_ergebnis(name):
     result = parse(load(name))
     assert result.headers
     assert isinstance(result.rows, list)
+
+
+# --------------------------------------------------------------------------- #
+# Echte Beispieldatei (Finanztool-Export mit Kategorie-/Eigentümer-Spalte)
+# --------------------------------------------------------------------------- #
+def test_finanztool_export_erkennung():
+    result = parse(load("finanztool_kategorie_cp1252.csv"))
+    assert result.dialect.encoding == "cp1252"
+    assert result.dialect.delimiter == ";"
+    assert result.dialect.header_row == 0
+    m = result.mapping
+    assert m.date == "Wertstellung"
+    assert m.payee == "Empfänger/Auftraggeber"
+    assert m.purpose == "Verwendungszweck"
+    assert m.amount == "Betrag"
+    assert m.category == "Kategorie"
+
+
+def test_finanztool_betraege_und_kategorie():
+    result = parse(load("finanztool_kategorie_cp1252.csv"))
+    assert len(result.rows) == 12  # Leerzeile am Ende übersprungen
+    r = result.rows[0]
+    assert r.amount == Decimal("1.00")
+    assert r.category == "man. Buchungen"
+    # Zeile mit Tausenderpunkt
+    umbuchung = next(x for x in result.rows if x.category == "04 Umbuchungen")
+    assert umbuchung.amount == Decimal("2500.00")
+    # Eigentümer-Spalte 'Frei 3' muss manuell gemappt werden -> hier per Mapping
+    from app.imports import ColumnMapping, parse_rows
+    rows = parse_rows(
+        load("finanztool_kategorie_cp1252.csv").decode("cp1252"),
+        result.dialect,
+        ColumnMapping(**{**result.mapping.__dict__, "owner": "Frei 3"}),
+    )
+    hausgeld = next(x for x in rows if x.category == "Hausgeld")
+    assert hausgeld.owner_hint in {"E1", "E2", "E3", "E4"}

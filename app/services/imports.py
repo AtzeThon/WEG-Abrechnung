@@ -20,6 +20,7 @@ from app.imports import (
     CsvDialect,
     guess_amount_mode,
     header_signature,
+    normalize,
     parse,
     sniff,
 )
@@ -29,6 +30,7 @@ from app.models import (
     ImportBatch,
     ImportProfile,
     ImportRow,
+    Owner,
     Transaction,
     TransactionSource,
 )
@@ -54,8 +56,12 @@ def dialect_from_profile(profile: ImportProfile) -> CsvDialect:
     )
 
 
-def parse_batch(batch: ImportBatch, profile: ImportProfile | None) -> None:
-    """Rohdaten des Batches parsen und `batch.rows` (neu) befüllen."""
+def parse_batch(db: Session, batch: ImportBatch, profile: ImportProfile | None) -> None:
+    """Rohdaten des Batches parsen und `batch.rows` (neu) befüllen.
+
+    Enthält die CSV eine Kategorie-/Eigentümer-Spalte (Mapping ``category`` /
+    ``owner``), wird daraus direkt ein Kostenart-/Eigentümer-Vorschlag abgeleitet.
+    """
     raw = bytes(batch.raw_content)
     if profile is not None:
         result = parse(
@@ -67,21 +73,33 @@ def parse_batch(batch: ImportBatch, profile: ImportProfile | None) -> None:
     else:
         result = parse(raw)
 
+    cost_types = {
+        normalize(c.name): c for c in db.scalars(select(CostType).where(CostType.active))
+    }
+    owners_by_code = {o.code.strip().upper(): o.id for o in db.scalars(select(Owner))}
+    cat_column = (profile.mapping.get("category") if profile else result.mapping.category) or ""
+
     batch.rows.clear()
     for pr in result.rows:
-        batch.rows.append(
-            ImportRow(
-                line_no=pr.line_no,
-                booking_date=pr.booking_date,
-                payee=pr.payee[:255],
-                purpose=pr.purpose[:1000],
-                amount=pr.amount,
-                raw={k: str(v) for k, v in pr.raw.items()},
-                parse_error="; ".join(pr.errors)[:500],
-                is_duplicate=False,
-                include=not pr.errors,
-            )
+        row = ImportRow(
+            line_no=pr.line_no,
+            booking_date=pr.booking_date,
+            payee=pr.payee[:255],
+            purpose=pr.purpose[:1000],
+            amount=pr.amount,
+            raw={k: str(v) for k, v in pr.raw.items()},
+            parse_error="; ".join(pr.errors)[:500],
+            is_duplicate=False,
+            include=not pr.errors,
         )
+        if pr.category:
+            match = cost_types.get(normalize(pr.category))
+            if match is not None:
+                row.cost_type_id = match.id
+                row.suggestion_note = f"aus Spalte „{cat_column or 'Kategorie'}“"[:200]
+                if match.kind in OWNER_REQUIRED_KINDS and pr.owner_hint:
+                    row.owner_id = owners_by_code.get(pr.owner_hint.strip().upper())
+        batch.rows.append(row)
 
 
 def sniff_batch(batch: ImportBatch) -> tuple[list[str], CsvDialect, ColumnMapping, list[dict]]:
@@ -158,16 +176,20 @@ def _dominant(counter: Counter, total: int) -> int | None:
     return None
 
 
+_MIN_SUBSTRING_LEN = 4  # kürzere Zahlungspartner nur exakt matchen
+
+
 def suggest(db: Session, account_id: int, payee: str, purpose: str) -> tuple[int | None, int | None, str]:
     payee = (payee or "").strip()
-    if not payee:
+    if len(payee) < 2:
         return None, None, ""
 
     txns = db.scalars(select(Transaction).where(Transaction.payee.ilike(payee))).all()
     basis = "exakt"
-    if not txns:
+    if not txns and len(payee) >= _MIN_SUBSTRING_LEN:
+        like = payee.replace("%", r"\%").replace("_", r"\_")
         txns = db.scalars(
-            select(Transaction).where(Transaction.payee.ilike(f"%{payee}%"))
+            select(Transaction).where(Transaction.payee.ilike(f"%{like}%"))
         ).all()
         basis = "enthält"
     if not txns:

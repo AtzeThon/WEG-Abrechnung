@@ -1,0 +1,13 @@
+Wertstellung;Empfänger/Auftraggeber;Frei 3;Kategorie;Betrag;Stand;Verwendungszweck
+02.07.2026;E1;Keine;man. Buchungen;1,00;1,00;Testbuchung
+02.07.2026;sdf;Keine;man. Buchungen;-1,00;0,00;Testbuchung           DATUM 02.07.2026, 06.50 UHR
+03.07.2026;asadf;E4;Hausgeld;188,50;188,50;Hausgeld
+01.08.2026;asf;Keine;Bankgebühren;-14,15;174,35;Entgeltabrechnungsiehe Anlage
+01.08.2026;af;E1;Hausgeld;260,00;434,35;Hausgeld
+03.08.2026;afd;E2;Hausgeld;390,00;824,35;Hausgeld
+03.08.2026;af;E4;Hausgeld;188,50;1.012,85;Hausgeld
+17.08.2026;asfd;E3;Hausgeld;180,00;1.192,85;Hausgeld 08.26
+18.08.2026;af;Keine;04 Umbuchungen;2.500,00;3.692,85;UMBUCHUNG 4
+24.08.2026;a;Keine;Haftpflicht;6,50;3.699,35;XXXX-XXX.XXX.XXX
+01.09.2026;a;Keine;Gebäudeversicherung;-17,38;3.941,97;XXXX-XXX.XXX.XXX V. Wohngeb. m. 3f. Kvom  bis 01.10.2026
+01.09.2026;af;E1;Hausgeld;260,00;3.959,35;Hausgeld

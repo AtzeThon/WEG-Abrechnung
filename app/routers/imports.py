@@ -105,7 +105,7 @@ async def imports_upload(
     profile = db.scalar(select(ImportProfile).where(ImportProfile.signature == signature))
     if profile is not None:
         batch.profile_id = profile.id
-        svc.parse_batch(batch, profile)
+        svc.parse_batch(db, batch, profile)
         svc.mark_duplicates(db, batch)
         svc.apply_suggestions(db, batch)
         db.commit()
@@ -177,6 +177,8 @@ async def imports_mapping_save(request: Request, batch_id: int, db: Session = De
         amount_debit=form.get("map_amount_debit") or None,
         amount_credit=form.get("map_amount_credit") or None,
         sign_column=form.get("map_sign_column") or None,
+        category=form.get("map_category") or None,
+        owner=form.get("map_owner") or None,
     )
     if not mapping.is_complete(amount_mode):
         flash(request, "Bitte mindestens Datum und Betrag zuordnen.", "error")
@@ -194,7 +196,7 @@ async def imports_mapping_save(request: Request, batch_id: int, db: Session = De
     )
     db.flush()
     batch.profile_id = profile.id
-    svc.parse_batch(batch, profile)
+    svc.parse_batch(db, batch, profile)
     svc.mark_duplicates(db, batch)
     svc.apply_suggestions(db, batch)
     db.commit()

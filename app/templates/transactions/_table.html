@@ -27,7 +27,12 @@
     <tbody>
       {% for t in rows %}
       <tr>
-        <td class="td whitespace-nowrap">{{ t.booking_date | datum }}</td>
+        <td class="td whitespace-nowrap">
+          {{ t.booking_date | datum }}
+          {% if t.source.value == 'csv_import' %}
+          <span class="ml-1 text-[10px] align-middle px-1 rounded bg-slate-100 text-slate-500" title="per CSV-Import angelegt">CSV</span>
+          {% endif %}
+        </td>
         <td class="td">{{ t.payee }}{% if t.note %}<span class="block text-xs text-slate-400">{{ t.note }}</span>{% endif %}</td>
         <td class="td">{{ t.cost_type.name }}</td>
         <td class="td text-slate-500">{{ t.account.name }}</td>

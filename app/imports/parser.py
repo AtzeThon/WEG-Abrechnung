@@ -42,6 +42,7 @@ _KEYWORDS: dict[str, tuple[str, ...]] = {
     ),
     "purpose": ("verwendungszweck", "buchungstext", "vwz", "umsatztext", "verwendung"),
     "amount": ("betrag", "umsatz", "betrageur", "umsatzeur"),
+    "category": ("kategorie", "umsatzart", "buchungsart"),
 }
 # Bei Feld -> normalisierte Header-Fragmente, die die Zuordnung ausschließen.
 _EXCLUDE: dict[str, tuple[str, ...]] = {
@@ -221,6 +222,8 @@ def parse_rows(
                 amount=amount,
                 raw=row,
                 errors=tuple(errors),
+                category=(row.get(mapping.category or "") or "").strip(),
+                owner_hint=(row.get(mapping.owner or "") or "").strip(),
             )
         )
     return out
