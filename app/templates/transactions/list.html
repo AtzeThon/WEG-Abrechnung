@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Buchungen · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">Buchungen</h1>
+  <a href="{{ url_for('transactions_new') }}" class="btn-primary">+ Buchung</a>
+</div>
+
+<form class="card mb-4 grid gap-3 md:grid-cols-3 lg:grid-cols-6 text-sm"
+      hx-get="{{ url_for('transactions_list') }}" hx-target="#txn-table" hx-push-url="true"
+      hx-trigger="change, keyup delay:400ms from:[name=q], submit">
+  <label class="block">
+    <span class="label">Konto</span>
+    <select name="account_id" class="input">
+      <option value="">alle</option>
+      {% for a in accounts %}<option value="{{ a.id }}" {{ 'selected' if filters.account_id == a.id }}>{{ a.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="block">
+    <span class="label">Kostenart</span>
+    <select name="cost_type_id" class="input">
+      <option value="">alle</option>
+      {% for c in cost_types %}<option value="{{ c.id }}" {{ 'selected' if filters.cost_type_id == c.id }}>{{ c.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="block">
+    <span class="label">Eigentümer</span>
+    <select name="owner_id" class="input">
+      <option value="">alle</option>
+      {% for o in owners %}<option value="{{ o.id }}" {{ 'selected' if filters.owner_id == o.id }}>{{ o.code }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="block">
+    <span class="label">von</span>
+    <input type="date" name="date_from" value="{{ filters.date_from }}" class="input">
+  </label>
+  <label class="block">
+    <span class="label">bis</span>
+    <input type="date" name="date_to" value="{{ filters.date_to }}" class="input">
+  </label>
+  <label class="block">
+    <span class="label">Suche (Partner/Notiz)</span>
+    <input type="search" name="q" value="{{ filters.q }}" class="input" placeholder="Text…">
+  </label>
+  <input type="hidden" name="sort" value="{{ filters.sort }}">
+  <input type="hidden" name="dir" value="{{ filters.dir }}">
+</form>
+
+<div id="txn-table">
+  {% include "transactions/_table.html" %}
+</div>
+{% endblock %}

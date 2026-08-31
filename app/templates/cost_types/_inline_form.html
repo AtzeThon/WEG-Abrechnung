@@ -1,0 +1,21 @@
+{% from "_macros.html" import field, select %}
+<div id="ct-modal" class="fixed inset-0 bg-black/30 flex items-start justify-center p-6 z-50 no-print">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">Neue Kostenart</h2>
+      <button type="button" class="text-slate-400 hover:text-slate-700"
+              onclick="document.getElementById('ct-modal').remove()">✕</button>
+    </div>
+    <form hx-post="{{ url_for('cost_types_inline_create') }}" hx-swap="none" class="space-y-3">
+      {{ field('name', 'Name', required=True) }}
+      {{ select('category', 'Kategorie', category_options, 'sonstiges', required=True) }}
+      {{ select('kind', 'Fachlicher Typ', kind_options, 'betriebskosten', required=True) }}
+      {{ select('allocation_strategy', 'Umlageschlüssel', strategy_options, 'mea', required=True) }}
+      <div class="flex gap-2 pt-1">
+        <button class="btn-primary">Anlegen</button>
+        <button type="button" class="btn-ghost"
+                onclick="document.getElementById('ct-modal').remove()">Abbrechen</button>
+      </div>
+    </form>
+  </div>
+</div>

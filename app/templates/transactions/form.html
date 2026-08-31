@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, textarea %}
+{% block title %}{{ 'Buchung bearbeiten' if txn else 'Neue Buchung' }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">{{ 'Buchung bearbeiten' if txn else 'Neue Buchung' }}</h1>
+
+<form method="post"
+      action="{{ url_for('transactions_update', txn_id=txn.id) if txn else url_for('transactions_create') }}"
+      class="card max-w-xl space-y-4">
+
+  <div class="grid grid-cols-2 gap-4">
+    <label class="block">
+      <span class="label">Konto <span class="text-red-500">*</span></span>
+      <select name="account_id" class="input" required>
+        {% for a in accounts %}
+        <option value="{{ a.id }}"
+          {{ 'selected' if (txn and txn.account_id == a.id) or (not txn and preset_account_id == a.id) }}>{{ a.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {{ field('booking_date', 'Datum', (txn.booking_date | datum) if txn else '', type='text', required=True, hint='TT.MM.JJJJ') }}
+  </div>
+
+  {{ field('payee', 'Zahlungspartner / Lieferant', txn.payee if txn else '') }}
+
+  <div>
+    <div class="flex items-center justify-between">
+      <span class="label">Kostenart <span class="text-red-500">*</span></span>
+      <button type="button" class="text-xs text-blue-600 hover:underline"
+              hx-get="{{ url_for('cost_types_inline_new') }}" hx-target="#ct-modal-slot" hx-swap="innerHTML">
+        + neue Kostenart
+      </button>
+    </div>
+    <select id="cost_type_id" name="cost_type_id" class="input" required>
+      {% for c in cost_types %}
+      <option value="{{ c.id }}" {{ 'selected' if txn and txn.cost_type_id == c.id }}>{{ c.name }} ({{ c.kind.label }})</option>
+      {% endfor %}
+    </select>
+    <div id="ct-modal-slot"></div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <label class="block">
+      <span class="label">Eigentümer (optional)</span>
+      <select name="owner_id" class="input">
+        <option value="">–</option>
+        {% for o in owners %}
+        <option value="{{ o.id }}" {{ 'selected' if txn and txn.owner_id == o.id }}>{{ o.code }} {{ o.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {{ field('amount', 'Betrag (€)', (txn.amount | dezimal) if txn else '', required=True,
+             hint='Einzahlung positiv, Ausgabe negativ') }}
+  </div>
+
+  {{ textarea('note', 'Notiz', txn.note if txn else '') }}
+
+  <div class="flex gap-2 pt-2">
+    <button class="btn-primary" name="again" value="">Speichern</button>
+    {% if not txn %}
+    <button class="btn-ghost border border-slate-300" name="again" value="1">Speichern &amp; nächste</button>
+    {% endif %}
+    <a href="{{ url_for('transactions_list') }}" class="btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

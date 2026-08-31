@@ -25,7 +25,10 @@
         <td class="td text-right">{{ balances[a.id] | euro }}</td>
         <td class="td">{{ 'aktiv' if a.active else 'inaktiv' }}</td>
         <td class="td text-right whitespace-nowrap">
-          <a href="{{ url_for('accounts_edit', account_id=a.id) }}" class="text-blue-600 hover:underline">Bearbeiten</a>
+          {% if url_has(request, 'account_ledger') %}
+          <a href="{{ url_for('account_ledger', account_id=a.id) }}" class="text-blue-600 hover:underline">Kontoauszug</a>
+          {% endif %}
+          <a href="{{ url_for('accounts_edit', account_id=a.id) }}" class="ml-3 text-blue-600 hover:underline">Bearbeiten</a>
           <form method="post" action="{{ url_for('accounts_delete', account_id=a.id) }}" class="inline"
                 onsubmit="return confirm('Konto „{{ a.name }}“ löschen?')">
             <button class="ml-3 text-red-600 hover:underline">Löschen</button>

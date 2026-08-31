@@ -58,6 +58,42 @@ def _apply_form(
     ct.active = active is not None
 
 
+@router.get("/inline-neu", response_class=HTMLResponse, name="cost_types_inline_new")
+def cost_types_inline_new(request: Request):
+    """Mini-Formular für „neue Kostenart" aus der Buchungserfassung heraus (htmx)."""
+    return templates.TemplateResponse(
+        request,
+        "cost_types/_inline_form.html",
+        {"category_options": CATEGORY_OPTIONS, "kind_options": KIND_OPTIONS,
+         "strategy_options": STRATEGY_OPTIONS},
+    )
+
+
+@router.post("/inline-neu", response_class=HTMLResponse, name="cost_types_inline_create")
+def cost_types_inline_create(
+    request: Request,
+    name: str = Form(...),
+    category: str = Form("sonstiges"),
+    kind: str = Form("betriebskosten"),
+    allocation_strategy: str = Form("mea"),
+    db: Session = Depends(get_db),
+):
+    existing = db.scalar(select(CostType).where(CostType.name == name.strip()))
+    ct = existing or CostType(sort_order=db.scalar(select(func.count(CostType.id))) or 0)
+    if existing is None:
+        _apply_form(
+            ct, name=name, category=category, default_supplier="", kind=kind,
+            allocation_strategy=allocation_strategy, proportional_to_id=None, active="1",
+        )
+        db.add(ct)
+        db.commit()
+    # Komplettes Dropdown (mit der neuen Kostenart ausgewählt) + Modal-Reset – alles per OOB-Swap.
+    all_cts = list(db.scalars(select(CostType).where(CostType.active).order_by(CostType.name)))
+    return templates.TemplateResponse(
+        request, "cost_types/_inline_option.html", {"cost_types": all_cts, "selected_id": ct.id}
+    )
+
+
 @router.get("", response_class=HTMLResponse, name="cost_types_list")
 def cost_types_list(request: Request, db: Session = Depends(get_db)):
     cost_types = list(

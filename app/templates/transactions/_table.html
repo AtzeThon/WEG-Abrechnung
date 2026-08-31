@@ -1,0 +1,56 @@
+{% macro sort_link(key, label) %}
+  {% set new_dir = 'asc' if (filters.sort == key and filters.dir == 'desc') else ('desc' if filters.sort == key else 'asc') %}
+  <a class="hover:underline" href="?{{ {'account_id': filters.account_id or '', 'owner_id': filters.owner_id or '',
+        'cost_type_id': filters.cost_type_id or '', 'date_from': filters.date_from, 'date_to': filters.date_to,
+        'q': filters.q, 'sort': key, 'dir': new_dir} | urlencode }}"
+     hx-get="{{ url_for('transactions_list') }}?{{ {'account_id': filters.account_id or '', 'owner_id': filters.owner_id or '',
+        'cost_type_id': filters.cost_type_id or '', 'date_from': filters.date_from, 'date_to': filters.date_to,
+        'q': filters.q, 'sort': key, 'dir': new_dir} | urlencode }}"
+     hx-target="#txn-table" hx-push-url="true">
+    {{ label }}{% if filters.sort == key %} {{ '▲' if filters.dir == 'asc' else '▼' }}{% endif %}
+  </a>
+{% endmacro %}
+
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr>
+        <th class="th">{{ sort_link('datum', 'Datum') }}</th>
+        <th class="th">{{ sort_link('partner', 'Zahlungspartner') }}</th>
+        <th class="th">Kostenart</th>
+        <th class="th">Konto</th>
+        <th class="th">Eig.</th>
+        <th class="th text-right">{{ sort_link('betrag', 'Betrag') }}</th>
+        <th class="th"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in rows %}
+      <tr>
+        <td class="td whitespace-nowrap">{{ t.booking_date | datum }}</td>
+        <td class="td">{{ t.payee }}{% if t.note %}<span class="block text-xs text-slate-400">{{ t.note }}</span>{% endif %}</td>
+        <td class="td">{{ t.cost_type.name }}</td>
+        <td class="td text-slate-500">{{ t.account.name }}</td>
+        <td class="td">{{ t.owner.code if t.owner else '' }}</td>
+        <td class="td text-right whitespace-nowrap {{ 'text-red-600' if t.amount < 0 else 'text-green-700' }}">{{ t.amount | euro }}</td>
+        <td class="td text-right whitespace-nowrap">
+          <a href="{{ url_for('transactions_edit', txn_id=t.id) }}" class="text-blue-600 hover:underline">Bearb.</a>
+          <form method="post" action="{{ url_for('transactions_delete', txn_id=t.id) }}" class="inline"
+                onsubmit="return confirm('Buchung löschen?')">
+            <button class="ml-2 text-red-600 hover:underline">Lö.</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td class="td text-slate-400" colspan="7">Keine Buchungen für diese Filter.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="font-medium">
+        <td class="td" colspan="5">{{ rows | length }} Buchung(en) – Summe</td>
+        <td class="td text-right {{ 'text-red-600' if total < 0 else 'text-green-700' }}">{{ total | euro }}</td>
+        <td class="td"></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

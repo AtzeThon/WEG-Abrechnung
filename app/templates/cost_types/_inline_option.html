@@ -1,0 +1,7 @@
+{# OOB-Swap: Dropdown der Buchungserfassung ersetzen + Modal schließen #}
+<select id="cost_type_id" name="cost_type_id" class="input" required hx-swap-oob="true">
+  {% for c in cost_types %}
+  <option value="{{ c.id }}" {{ 'selected' if c.id == selected_id }}>{{ c.name }} ({{ c.kind.label }})</option>
+  {% endfor %}
+</select>
+<div id="ct-modal-slot" hx-swap-oob="true"></div>
