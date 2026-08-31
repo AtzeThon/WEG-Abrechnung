@@ -1,0 +1,26 @@
+[Unit]
+Description=WEG-Abrechnung (FastAPI/Uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=weg
+Group=weg
+WorkingDirectory=/opt/weg-abrechnung
+EnvironmentFile=/opt/weg-abrechnung/.env
+# Schema bei jedem Start auf den aktuellen Stand bringen
+ExecStartPre=/opt/weg-abrechnung/.venv/bin/alembic upgrade head
+ExecStart=/opt/weg-abrechnung/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=3
+
+# Härtung
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/weg-abrechnung/data
+
+[Install]
+WantedBy=multi-user.target

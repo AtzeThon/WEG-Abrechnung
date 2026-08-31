@@ -1,0 +1,8 @@
+[Unit]
+Description=WEG-Abrechnung – SQLite-Backup
+
+[Service]
+Type=oneshot
+User=weg
+Group=weg
+ExecStart=/opt/weg-abrechnung/deploy/backup.sh
