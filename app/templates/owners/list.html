@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Eigentümer · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">Eigentümer</h1>
+  <a href="{{ url_for('owners_new') }}" class="btn-primary">+ Eigentümer</a>
+</div>
+
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr>
+        <th class="th">Kürzel</th><th class="th">Name</th><th class="th">E-Mail</th>
+        <th class="th text-right">MEA</th><th class="th text-right">Anteil</th>
+        <th class="th">Status</th><th class="th"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in owners %}
+      <tr>
+        <td class="td font-medium">{{ o.code }}</td>
+        <td class="td">{{ o.name }}</td>
+        <td class="td text-slate-500">{{ o.email }}</td>
+        <td class="td text-right">{{ o.mea | dezimal }}</td>
+        <td class="td text-right">{{ (o.mea / total_mea) | prozent if total_mea else '–' }}</td>
+        <td class="td">{{ 'aktiv' if o.active else 'inaktiv' }}</td>
+        <td class="td text-right whitespace-nowrap">
+          <a href="{{ url_for('owners_edit', owner_id=o.id) }}" class="text-blue-600 hover:underline">Bearbeiten</a>
+          <form method="post" action="{{ url_for('owners_delete', owner_id=o.id) }}" class="inline"
+                onsubmit="return confirm('Eigentümer {{ o.code }} löschen?')">
+            <button class="ml-3 text-red-600 hover:underline">Löschen</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td class="td text-slate-400" colspan="7">Noch keine Eigentümer erfasst.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if owners %}
+    <tfoot>
+      <tr class="font-medium">
+        <td class="td" colspan="3">Summe</td>
+        <td class="td text-right">{{ total_mea | dezimal }}</td>
+        <td class="td text-right">
+          {% if total_mea == 1000 %}<span class="text-green-700">100,00 %</span>
+          {% else %}<span class="text-amber-600">{{ total_mea | dezimal }} ≠ 1000</span>{% endif %}
+        </td>
+        <td class="td" colspan="2"></td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+<p class="text-xs text-slate-400 mt-2">Die Summe der Miteigentumsanteile sollte 1000 ergeben.</p>
+{% endblock %}

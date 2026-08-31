@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app import auth
 from app.config import settings
-from app.templating import set_route_names, templates
+from app.templating import templates
 
 logger = logging.getLogger("weg")
 
@@ -43,10 +43,6 @@ def create_app() -> FastAPI:
 
     _register_routers(app)
 
-    set_route_names(
-        {r.name for r in app.routes if getattr(r, "name", None)}
-    )
-
     @app.get("/gesundheit", include_in_schema=False)
     def health() -> dict[str, str]:
         return {"status": "ok"}
@@ -59,12 +55,15 @@ def create_app() -> FastAPI:
 
 
 def _register_routers(app: FastAPI) -> None:
-    """Feature-Router werden hier registriert, sobald sie existieren."""
+    """Feature-Router registrieren, sobald das jeweilige Modul existiert."""
+    import importlib
+    import importlib.util
+
     for module_name in ("owners", "accounts", "cost_types", "transactions", "periods", "statements"):
-        try:
-            module = __import__(f"app.routers.{module_name}", fromlist=["router"])
-        except ModuleNotFoundError:
+        dotted = f"app.routers.{module_name}"
+        if importlib.util.find_spec(dotted) is None:
             continue
+        module = importlib.import_module(dotted)
         router = getattr(module, "router", None)
         if router is not None:
             app.include_router(router)

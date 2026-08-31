@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, checkbox %}
+{% block title %}{{ 'Eigentümer bearbeiten' if owner else 'Neuer Eigentümer' }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">{{ 'Eigentümer bearbeiten' if owner else 'Neuer Eigentümer' }}</h1>
+
+<form method="post"
+      action="{{ url_for('owners_update', owner_id=owner.id) if owner else url_for('owners_create') }}"
+      class="card max-w-lg space-y-4">
+  {{ field('code', 'Kürzel', owner.code if owner else '', required=True, hint='z. B. E1') }}
+  {{ field('name', 'Name', owner.name if owner else '') }}
+  {{ field('email', 'E-Mail', owner.email if owner else '', type='email') }}
+  {{ field('mea', 'Miteigentumsanteil (MEA)', (owner.mea | dezimal(4)) if owner else '', required=True,
+           hint='Anteilspunkte, Summe aller Eigentümer = 1000') }}
+  {{ checkbox('active', 'Aktiv', owner.active if owner else True) }}
+  <div class="flex gap-2 pt-2">
+    <button class="btn-primary">Speichern</button>
+    <a href="{{ url_for('owners_list') }}" class="btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

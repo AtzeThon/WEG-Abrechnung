@@ -1,0 +1,6 @@
+# Einheitliche Zeilenenden (Windows-Entwicklung, Linux-Betrieb auf dem Pi)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.exe binary

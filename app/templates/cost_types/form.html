@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, select, checkbox %}
+{% block title %}{{ 'Kostenart bearbeiten' if cost_type else 'Neue Kostenart' }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">{{ 'Kostenart bearbeiten' if cost_type else 'Neue Kostenart' }}</h1>
+
+<form method="post"
+      action="{{ url_for('cost_types_update', cost_type_id=cost_type.id) if cost_type else url_for('cost_types_create') }}"
+      class="card max-w-lg space-y-4">
+  {{ field('name', 'Name', cost_type.name if cost_type else '', required=True,
+           hint='muss dem Buchungstext entsprechen, z. B. „Gebäudeversicherung“') }}
+  {{ select('category', 'Kategorie (Gliederung Einzelabrechnung)', category_options,
+            cost_type.category.value if cost_type else 'sonstiges', required=True) }}
+  {{ field('default_supplier', 'Standard-Lieferant', cost_type.default_supplier if cost_type else '') }}
+  {{ select('kind', 'Fachlicher Typ', kind_options,
+            cost_type.kind.value if cost_type else 'betriebskosten', required=True,
+            hint='steuert die Verarbeitung in der Abrechnung') }}
+
+  <div id="strategy-wrap">
+    {{ select('allocation_strategy', 'Umlageschlüssel', strategy_options,
+              cost_type.allocation_strategy.value if cost_type else 'mea', required=True) }}
+  </div>
+
+  <div id="proportional-wrap" class="{{ '' if cost_type and cost_type.allocation_strategy.value == 'proportional' else 'hidden' }}">
+    {{ select('proportional_to_id', 'Proportional zu Kostenart', proportional_options,
+              cost_type.proportional_to_id if cost_type and cost_type.proportional_to_id else '',
+              blank='– bitte wählen –') }}
+  </div>
+
+  {{ checkbox('active', 'Aktiv', cost_type.active if cost_type else True) }}
+  <div class="flex gap-2 pt-2">
+    <button class="btn-primary">Speichern</button>
+    <a href="{{ url_for('cost_types_list') }}" class="btn-ghost">Abbrechen</a>
+  </div>
+</form>
+
+<script>
+  (function () {
+    var strat = document.querySelector('[name=allocation_strategy]');
+    var prop = document.getElementById('proportional-wrap');
+    function sync() { prop.classList.toggle('hidden', strat.value !== 'proportional'); }
+    strat.addEventListener('change', sync); sync();
+  })();
+</script>
+{% endblock %}

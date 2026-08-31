@@ -39,3 +39,7 @@ node_modules/
 
 # Scratch / analysis
 /scratch/
+
+# Claude Code lokale Einstellungen (Run-Konfiguration wird bewusst versioniert)
+.claude/*
+!.claude/launch.json

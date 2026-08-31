@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, select, checkbox %}
+{% block title %}{{ 'Konto bearbeiten' if account else 'Neues Konto' }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">{{ 'Konto bearbeiten' if account else 'Neues Konto' }}</h1>
+
+<form method="post"
+      action="{{ url_for('accounts_update', account_id=account.id) if account else url_for('accounts_create') }}"
+      class="card max-w-lg space-y-4">
+  {{ field('name', 'Name', account.name if account else '', required=True) }}
+  {{ select('type', 'Typ', type_options, account.type.value if account else 'giro', required=True) }}
+  {{ field('opening_balance', 'Anfangssaldo', (account.opening_balance | dezimal) if account else '0,00') }}
+  {{ field('opening_balance_date', 'Anfangssaldo per', (account.opening_balance_date | datum) if account and account.opening_balance_date else '', hint='TT.MM.JJJJ') }}
+  {{ checkbox('active', 'Aktiv', account.active if account else True) }}
+  <div class="flex gap-2 pt-2">
+    <button class="btn-primary">Speichern</button>
+    <a href="{{ url_for('accounts_list') }}" class="btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

@@ -7,24 +7,45 @@
   <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
   <script src="{{ url_for('static', path='htmx.min.js') }}" defer></script>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen">
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 {% if request.session.get('user') %}
-<header class="bg-white border-b border-slate-200">
-  <nav class="max-w-6xl mx-auto px-4 h-14 flex items-center gap-6 text-sm">
-    <a href="{{ url_for('dashboard') }}" class="font-semibold text-slate-900">{{ APP_NAME }}</a>
-    <a href="{{ url_for('dashboard') }}" class="hover:text-blue-700">Übersicht</a>
-    {% if url_has('owners_list') %}<a href="{{ url_for('owners_list') }}" class="hover:text-blue-700">Eigentümer</a>{% endif %}
-    {% if url_has('accounts_list') %}<a href="{{ url_for('accounts_list') }}" class="hover:text-blue-700">Konten</a>{% endif %}
-    {% if url_has('cost_types_list') %}<a href="{{ url_for('cost_types_list') }}" class="hover:text-blue-700">Kostenarten</a>{% endif %}
-    {% if url_has('transactions_list') %}<a href="{{ url_for('transactions_list') }}" class="hover:text-blue-700">Buchungen</a>{% endif %}
-    {% if url_has('periods_list') %}<a href="{{ url_for('periods_list') }}" class="hover:text-blue-700">Abrechnungen</a>{% endif %}
+<header class="bg-white border-b border-slate-200 no-print">
+  <nav class="max-w-6xl mx-auto px-4 h-14 flex items-center gap-1 text-sm">
+    <a href="{{ url_for('dashboard') }}" class="font-semibold text-slate-900 mr-4">{{ APP_NAME }}</a>
+    {% set links = [
+      ('owners_list', 'Eigentümer'),
+      ('accounts_list', 'Konten'),
+      ('cost_types_list', 'Kostenarten'),
+      ('transactions_list', 'Buchungen'),
+      ('periods_list', 'Abrechnungen'),
+    ] %}
+    {% for name, label in links %}
+      {% if url_has(request, name) %}
+      <a href="{{ url_for(name) }}"
+         class="px-3 py-1.5 rounded hover:bg-slate-100 {{ 'bg-slate-100 text-slate-900 font-medium' if request.url.path.startswith(url_for(name) | string) }}">{{ label }}</a>
+      {% endif %}
+    {% endfor %}
     <form method="post" action="{{ url_for('logout') }}" class="ml-auto">
-      <button class="text-slate-500 hover:text-red-600">Abmelden ({{ request.session.get('user') }})</button>
+      <button class="px-3 py-1.5 text-slate-500 hover:text-red-600">Abmelden ({{ request.session.get('user') }})</button>
     </form>
   </nav>
 </header>
 {% endif %}
-<main class="max-w-6xl mx-auto px-4 py-6">
+
+<main class="max-w-6xl w-full mx-auto px-4 py-6 flex-1">
+  {% set messages = get_flashed(request) %}
+  {% if messages %}
+  <div class="mb-4 space-y-2 no-print">
+    {% for m in messages %}
+    <div class="text-sm rounded px-3 py-2 border
+      {{ {'success':'bg-green-50 border-green-200 text-green-800',
+          'error':'bg-red-50 border-red-200 text-red-800',
+          'info':'bg-blue-50 border-blue-200 text-blue-800'}.get(m.category, 'bg-slate-50 border-slate-200') }}">
+      {{ m.message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
   {% block content %}{% endblock %}
 </main>
 </body>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Konten · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">Konten</h1>
+  <a href="{{ url_for('accounts_new') }}" class="btn-primary">+ Konto</a>
+</div>
+
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr>
+        <th class="th">Name</th><th class="th">Typ</th>
+        <th class="th text-right">Anfangssaldo</th><th class="th">per</th>
+        <th class="th text-right">akt. Saldo</th><th class="th">Status</th><th class="th"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in accounts %}
+      <tr>
+        <td class="td font-medium">{{ a.name }}</td>
+        <td class="td">{{ 'Girokonto' if a.type.value == 'giro' else 'Rücklagenkonto' }}</td>
+        <td class="td text-right">{{ a.opening_balance | euro }}</td>
+        <td class="td text-slate-500">{{ a.opening_balance_date | datum }}</td>
+        <td class="td text-right">{{ balances[a.id] | euro }}</td>
+        <td class="td">{{ 'aktiv' if a.active else 'inaktiv' }}</td>
+        <td class="td text-right whitespace-nowrap">
+          <a href="{{ url_for('accounts_edit', account_id=a.id) }}" class="text-blue-600 hover:underline">Bearbeiten</a>
+          <form method="post" action="{{ url_for('accounts_delete', account_id=a.id) }}" class="inline"
+                onsubmit="return confirm('Konto „{{ a.name }}“ löschen?')">
+            <button class="ml-3 text-red-600 hover:underline">Löschen</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td class="td text-slate-400" colspan="7">Noch keine Konten erfasst.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

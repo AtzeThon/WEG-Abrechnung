@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Kostenarten · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">Kostenarten</h1>
+  <a href="{{ url_for('cost_types_new') }}" class="btn-primary">+ Kostenart</a>
+</div>
+
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr>
+        <th class="th">Name</th><th class="th">Kategorie</th><th class="th">Lieferant</th>
+        <th class="th">Fachlicher Typ</th><th class="th">Umlageschlüssel</th>
+        <th class="th">Status</th><th class="th"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ct in cost_types %}
+      <tr>
+        <td class="td font-medium">{{ ct.name }}</td>
+        <td class="td text-slate-500">{{ ct.category.label }}</td>
+        <td class="td text-slate-500">{{ ct.default_supplier }}</td>
+        <td class="td">{{ ct.kind.label }}</td>
+        <td class="td">
+          {{ ct.allocation_strategy.label }}
+          {% if ct.proportional_to %}<span class="text-slate-400">→ {{ ct.proportional_to.name }}</span>{% endif %}
+        </td>
+        <td class="td">{{ 'aktiv' if ct.active else 'inaktiv' }}</td>
+        <td class="td text-right whitespace-nowrap">
+          <a href="{{ url_for('cost_types_edit', cost_type_id=ct.id) }}" class="text-blue-600 hover:underline">Bearbeiten</a>
+          <form method="post" action="{{ url_for('cost_types_delete', cost_type_id=ct.id) }}" class="inline"
+                onsubmit="return confirm('Kostenart „{{ ct.name }}“ löschen?')">
+            <button class="ml-3 text-red-600 hover:underline">Löschen</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td class="td text-slate-400" colspan="7">Noch keine Kostenarten erfasst.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

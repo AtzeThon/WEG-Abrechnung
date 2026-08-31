@@ -1,0 +1,43 @@
+{% macro field(name, label, value='', type='text', required=False, hint='', attrs='') %}
+<label class="block">
+  <span class="label">{{ label }}{% if required %} <span class="text-red-500">*</span>{% endif %}</span>
+  <input class="input" type="{{ type }}" name="{{ name }}" value="{{ value if value is not none else '' }}"
+         {% if required %}required{% endif %} {{ attrs|safe }}>
+  {% if hint %}<span class="text-xs text-slate-400">{{ hint }}</span>{% endif %}
+</label>
+{% endmacro %}
+
+{% macro select(name, label, options, selected='', required=False, hint='', blank=None) %}
+<label class="block">
+  <span class="label">{{ label }}{% if required %} <span class="text-red-500">*</span>{% endif %}</span>
+  <select class="input" name="{{ name }}" {% if required %}required{% endif %}>
+    {% if blank is not none %}<option value="">{{ blank }}</option>{% endif %}
+    {% for val, text in options %}
+    <option value="{{ val }}" {{ 'selected' if val|string == selected|string }}>{{ text }}</option>
+    {% endfor %}
+  </select>
+  {% if hint %}<span class="text-xs text-slate-400">{{ hint }}</span>{% endif %}
+</label>
+{% endmacro %}
+
+{% macro textarea(name, label, value='', rows=2, hint='') %}
+<label class="block">
+  <span class="label">{{ label }}</span>
+  <textarea class="input" name="{{ name }}" rows="{{ rows }}">{{ value or '' }}</textarea>
+  {% if hint %}<span class="text-xs text-slate-400">{{ hint }}</span>{% endif %}
+</label>
+{% endmacro %}
+
+{% macro checkbox(name, label, checked=True) %}
+<label class="inline-flex items-center gap-2 text-sm">
+  <input type="checkbox" name="{{ name }}" value="1" {{ 'checked' if checked }}>
+  <span>{{ label }}</span>
+</label>
+{% endmacro %}
+
+{% macro page_header(title, back_url=None, back_label='Zurück') %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-semibold">{{ title }}</h1>
+  <div class="flex gap-2">{{ caller() if caller }}</div>
+</div>
+{% endmacro %}

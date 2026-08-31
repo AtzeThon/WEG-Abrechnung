@@ -14,12 +14,14 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 register_filters(templates.env)
 templates.env.globals["APP_NAME"] = "WEG-Abrechnung"
 
-# Namen der tatsächlich registrierten Routen (von app.main befüllt), damit
-# Navigationslinks nur erscheinen, wenn der zugehörige Router existiert.
-_ROUTE_NAMES: set[str] = set()
-templates.env.globals["url_has"] = _ROUTE_NAMES.__contains__
+
+def url_has(request, name: str) -> bool:
+    """True, wenn zu ``name`` eine Route existiert (für optionale Navigationslinks)."""
+    try:
+        request.url_for(name)
+        return True
+    except Exception:
+        return False
 
 
-def set_route_names(names) -> None:
-    _ROUTE_NAMES.clear()
-    _ROUTE_NAMES.update(names)
+templates.env.globals["url_has"] = url_has
