@@ -44,3 +44,34 @@ def test_period_overview_seite(client, db_session):
     assert r.status_code == 200
     assert "12.486,58" in r.text          # Gesamtkostenanteil
     assert "Hausgeldübersicht" in r.text
+
+
+def test_periods_update_speichert_carryover_und_overrides(client, db_session):
+    from decimal import Decimal
+
+    from app.models import Owner, PeriodOpeningBalance
+
+    seed(db_session, force=True)
+    period = db_session.scalar(select(BillingPeriod))
+    owner_ids = [o.id for o in db_session.scalars(select(Owner))]
+
+    r = client.post(
+        f"/abrechnungen/{period.id}",
+        data={
+            "label": "Abrechnung 2026",
+            "start_date": "01.08.2025",
+            "end_date": "31.07.2026",
+            "reserve_opening_balance": "4.000,00",
+            **{f"carryover_{oid}": "111,11" for oid in owner_ids},
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+
+    db_session.expire_all()
+    period = db_session.scalar(select(BillingPeriod))
+    assert period.reserve_opening_balance == Decimal("4000.00")
+    obs = db_session.scalars(
+        select(PeriodOpeningBalance).where(PeriodOpeningBalance.period_id == period.id)
+    ).all()
+    assert obs and all(ob.hausgeld_carryover == Decimal("111.11") for ob in obs)
