@@ -43,3 +43,7 @@ node_modules/
 # Claude Code lokale Einstellungen (Run-Konfiguration wird bewusst versioniert)
 .claude/*
 !.claude/launch.json
+
+# Build-Artefakte (setuptools)
+build/
+*.egg-info/

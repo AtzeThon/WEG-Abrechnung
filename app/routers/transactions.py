@@ -24,6 +24,16 @@ _SORT_COLUMNS = {
 }
 
 
+def _int_or_none(value: str | None) -> int | None:
+    """Leere Filter-Query-Parameter ('') als 'nicht gesetzt' behandeln."""
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
 def _lookups(db: Session) -> dict:
     return {
         "accounts": list(db.scalars(select(Account).order_by(Account.sort_order, Account.name))),
@@ -38,15 +48,19 @@ def _lookups(db: Session) -> dict:
 def transactions_list(
     request: Request,
     db: Session = Depends(get_db),
-    account_id: int | None = None,
-    owner_id: int | None = None,
-    cost_type_id: int | None = None,
+    account_id: str | None = None,
+    owner_id: str | None = None,
+    cost_type_id: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
     q: str | None = None,
     sort: str = "datum",
     dir: str = "desc",
 ):
+    account_id = _int_or_none(account_id)
+    owner_id = _int_or_none(owner_id)
+    cost_type_id = _int_or_none(cost_type_id)
+
     stmt = select(Transaction).options(
         selectinload(Transaction.account),
         selectinload(Transaction.cost_type),
@@ -87,11 +101,11 @@ def transactions_list(
 
 
 @router.get("/neu", response_class=HTMLResponse, name="transactions_new")
-def transactions_new(request: Request, db: Session = Depends(get_db), account_id: int | None = None):
+def transactions_new(request: Request, db: Session = Depends(get_db), account_id: str | None = None):
     return templates.TemplateResponse(
         request,
         "transactions/form.html",
-        {"txn": None, "preset_account_id": account_id, **_lookups(db)},
+        {"txn": None, "preset_account_id": _int_or_none(account_id), **_lookups(db)},
     )
 
 

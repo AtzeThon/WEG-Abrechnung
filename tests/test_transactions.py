@@ -50,6 +50,18 @@ def test_filter_nach_kostenart_und_text(client, db_session):
     assert "Hausgeld Zahler" in r.text
 
 
+def test_filter_mit_leeren_query_parametern(client, db_session):
+    """Das Filterformular sendet leere Selects als '' – darf nicht 422 werfen."""
+    _base_data(db_session)
+    r = client.get(
+        "/buchungen?account_id=&owner_id=&cost_type_id=&date_from=&date_to=&q=&sort=datum&dir=desc"
+    )
+    assert r.status_code == 200
+    # gemischt: ein gesetzter Filter, Rest leer
+    r = client.get("/buchungen?account_id=&cost_type_id=999&owner_id=&q=", headers={"HX-Request": "true"})
+    assert r.status_code == 200
+
+
 def test_account_ledger_running_balance(client, db_session):
     giro, ct, _hg, _e1 = _base_data(db_session)
     db_session.add_all([
