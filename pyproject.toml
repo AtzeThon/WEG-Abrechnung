@@ -35,7 +35,7 @@ dev = [
 weg-admin = "app.cli:main"
 
 [tool.setuptools]
-packages = ["app", "app.models", "app.allocation", "app.routers", "app.services"]
+packages = ["app", "app.models", "app.allocation", "app.imports", "app.routers", "app.services"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

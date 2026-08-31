@@ -5,10 +5,11 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.models.enums import TransactionSource
 
 
 class Transaction(Base):
@@ -28,6 +29,16 @@ class Transaction(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     note: Mapped[str] = mapped_column(String(500), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    # Herkunft (manuell erfasst vs. CSV-Import) zur Nachvollziehbarkeit.
+    source: Mapped[TransactionSource] = mapped_column(
+        Enum(TransactionSource, native_enum=False, length=16),
+        default=TransactionSource.MANUAL,
+        server_default=TransactionSource.MANUAL.value,
+    )
+    import_row_id: Mapped[int | None] = mapped_column(
+        ForeignKey("import_rows.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     account: Mapped[Account] = relationship(back_populates="transactions")  # noqa: F821
     cost_type: Mapped[CostType] = relationship(back_populates="transactions")  # noqa: F821

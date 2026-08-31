@@ -84,3 +84,28 @@ _STRATEGY_LABELS = {
 class PeriodStatus(str, enum.Enum):
     DRAFT = "draft"
     FINAL = "final"
+
+
+class TransactionSource(str, enum.Enum):
+    """Herkunft einer Buchung."""
+
+    MANUAL = "manuell"
+    CSV_IMPORT = "csv_import"
+
+
+class ImportBatchStatus(str, enum.Enum):
+    ENTWURF = "entwurf"          # hochgeladen, noch nicht gebucht
+    IMPORTIERT = "importiert"    # Buchungen wurden angelegt
+    VERWORFEN = "verworfen"      # abgebrochen
+
+    @property
+    def label(self) -> str:
+        return {
+            ImportBatchStatus.ENTWURF: "Entwurf",
+            ImportBatchStatus.IMPORTIERT: "importiert",
+            ImportBatchStatus.VERWORFEN: "verworfen",
+        }[self]
+
+
+# Fachliche Typen, die eine Eigentümer-Zuordnung an der Buchung erfordern.
+OWNER_REQUIRED_KINDS = {CostKind.HAUSGELD, CostKind.ERSTATTUNG, CostKind.SONDERUMLAGE}
