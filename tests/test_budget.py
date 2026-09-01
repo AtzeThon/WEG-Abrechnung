@@ -60,6 +60,14 @@ def data(db_session):
                garten=garten, prev=prev, cur=cur)
 
 
+def test_betrag_filter_zwei_nachkommastellen():
+    from app.locale import betrag
+
+    assert betrag(Decimal("782.9")) == "782,90"
+    assert betrag(Decimal("1234.5")) == "1234,50"  # kein Tausendertrenner im Eingabefeld
+    assert betrag(None) == "0,00"
+
+
 def test_month_windows_labels(data):
     windows = budget.month_windows(data["cur"])
     assert len(windows) == 12
@@ -157,3 +165,45 @@ def test_ohne_vorperiode_kein_vorschlag(db_session, data):
     for m in grid.months:
         for cell in m.cells.values():
             assert cell.vorschlag is None
+
+
+# --------------------------------------------------------------------------- #
+# Web-Routen
+# --------------------------------------------------------------------------- #
+def test_budget_view_rendert_grid(client, data):
+    r = client.get(f"/wirtschaftsplan/{data['cur'].id}")
+    assert r.status_code == 200
+    assert "Wirtschaftsplan" in r.text
+    assert "August" in r.text and "Juli" in r.text
+    assert data["gas"].name in r.text
+
+
+def test_budget_save_und_reset_ueber_route(client, db_session, data):
+    cur, gas = data["cur"], data["gas"]
+    r = client.post(
+        f"/wirtschaftsplan/{cur.id}",
+        # Monat 1: 750 weicht vom Vorschlag 745 ab -> Entry.
+        # Monat 0: 800 entspricht dem Ist -> kein Entry.
+        data={f"v_1_{gas.id}": "750,00", f"v_0_{gas.id}": "800,00"},
+        follow_redirects=True,
+    )
+    assert r.status_code == 200
+    entries = db_session.scalars(select(BudgetEntry).where(BudgetEntry.period_id == cur.id)).all()
+    assert len(entries) == 1
+    assert entries[0].month_index == 1 and entries[0].amount == Decimal("750.00")
+
+    client.post(f"/wirtschaftsplan/{cur.id}/zuruecksetzen", follow_redirects=True)
+    db_session.expire_all()
+    assert not db_session.scalars(select(BudgetEntry).where(BudgetEntry.period_id == cur.id)).all()
+
+
+def test_budget_index_leitet_bei_einer_periode_weiter(client, db_session):
+    p = BillingPeriod(
+        label="Nur eine", start_date=date(2025, 1, 1), end_date=date(2025, 12, 31),
+        status=PeriodStatus.DRAFT,
+    )
+    db_session.add(p)
+    db_session.commit()
+    r = client.get("/wirtschaftsplan", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"].endswith(f"/wirtschaftsplan/{p.id}")

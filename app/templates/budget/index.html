@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Wirtschaftsplan · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Wirtschaftsplan</h1>
+
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr><th class="th">Wirtschaftsjahr</th><th class="th">Zeitraum</th><th class="th"></th></tr>
+    </thead>
+    <tbody>
+      {% for p in periods %}
+      <tr>
+        <td class="td font-medium">
+          <a href="{{ url_for('budget_view', period_id=p.id) }}" class="text-blue-600 hover:underline">{{ p.label }}</a>
+        </td>
+        <td class="td">{{ p.start_date | datum }} – {{ p.end_date | datum }}</td>
+        <td class="td text-right">
+          <a href="{{ url_for('budget_view', period_id=p.id) }}" class="text-blue-600 hover:underline">Öffnen</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td class="td text-slate-400" colspan="3">Noch keine Abrechnungsperiode angelegt.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

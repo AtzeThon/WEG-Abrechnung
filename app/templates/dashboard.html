@@ -9,6 +9,7 @@
     ('cost_types_list', 'Kostenarten', 'Kategorien, fachliche Typen und Umlageschlüssel.'),
     ('transactions_list', 'Buchungen', 'Kontobewegungen erfassen und bearbeiten.'),
     ('periods_list', 'Abrechnungen', 'Wirtschaftsjahre, Übersicht und Einzelabrechnungen.'),
+    ('budget_index', 'Wirtschaftsplan', 'Monatliche Prognose je Kostenart mit laufendem Saldo.'),
   ] %}
   {% for name, title, desc in cards %}
   {% set exists = url_has(request, name) %}

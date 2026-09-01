@@ -1,0 +1,61 @@
+{#  Wirtschaftsplan-Raster: Zeilen = Monate, Spalten = Kostenarten + Summen.  #}
+{% set src_bg = {'ist': 'bg-green-50', 'prognose': 'bg-slate-50', 'manuell': 'bg-blue-50', 'leer': ''} %}
+
+{% macro cell(m, ct) %}
+  {% set c = m.cells[ct.id] %}
+  <td class="td text-right p-1 {{ src_bg[c.source] }}">
+    {% if pdf %}
+      {{ '' if c.source == 'leer' else c.effective | betrag }}
+    {% else %}
+      <input type="text" inputmode="decimal" name="v_{{ m.index }}_{{ ct.id }}"
+             value="{{ '' if c.source == 'leer' else c.effective | betrag }}"
+             title="{{ c.source }}{% if c.vorschlag is not none %} · Vorjahr {{ c.vorschlag | betrag }}{% endif %}"
+             class="w-24 text-right border border-slate-300 rounded px-1 py-0.5 text-xs {{ src_bg[c.source] }}">
+    {% endif %}
+  </td>
+{% endmacro %}
+
+<div class="card overflow-x-auto">
+  <table class="text-sm whitespace-nowrap">
+    <thead>
+      <tr>
+        <th class="th sticky left-0 bg-white">Monat</th>
+        {% for ct in grid.income_types %}<th class="th text-right">{{ ct.name }}</th>{% endfor %}
+        <th class="th text-right bg-slate-50">Einnahmen</th>
+        {% for ct in grid.expense_types %}<th class="th text-right">{{ ct.name }}</th>{% endfor %}
+        <th class="th text-right bg-slate-50">Ausgaben&nbsp;gesamt</th>
+        <th class="th text-right bg-slate-50">Differenz</th>
+        <th class="th text-right bg-slate-50">Saldo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="td font-medium sticky left-0 bg-white">Anfangssaldo</td>
+        <td class="td" colspan="{{ grid.income_types|length + grid.expense_types|length + 3 }}"></td>
+        <td class="td text-right font-medium">{{ grid.anfangssaldo | euro }}</td>
+      </tr>
+      {% for m in grid.months %}
+      <tr>
+        <td class="td font-medium sticky left-0 bg-white">{{ m.label }}</td>
+        {% for ct in grid.income_types %}{{ cell(m, ct) }}{% endfor %}
+        <td class="td text-right bg-slate-50">{{ m.einnahmen | euro }}</td>
+        {% for ct in grid.expense_types %}{{ cell(m, ct) }}{% endfor %}
+        <td class="td text-right bg-slate-50">{{ m.ausgaben | euro }}</td>
+        <td class="td text-right bg-slate-50 {{ 'text-red-600' if m.differenz < 0 }}">{{ m.differenz | euro }}</td>
+        <td class="td text-right bg-slate-50 font-medium {{ 'text-red-600' if m.saldo < 0 }}">{{ m.saldo | euro }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="font-semibold border-t-2 border-slate-300">
+        <td class="td sticky left-0 bg-white">Summe</td>
+        {% for ct in grid.income_types %}<td class="td text-right">{{ grid.totals[ct.id] | euro }}</td>{% endfor %}
+        <td class="td text-right bg-slate-50">{{ grid.total_einnahmen | euro }}</td>
+        {% for ct in grid.expense_types %}<td class="td text-right">{{ grid.totals[ct.id] | euro }}</td>{% endfor %}
+        <td class="td text-right bg-slate-50">{{ grid.total_ausgaben | euro }}</td>
+        <td class="td text-right bg-slate-50 {{ 'text-red-600' if grid.total_differenz < 0 }}">{{ grid.total_differenz | euro }}</td>
+        <td class="td text-right bg-slate-50">{{ grid.endsaldo | euro }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

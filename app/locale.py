@@ -34,6 +34,12 @@ def dezimal(value, digits: int = 2) -> str:
     return format_decimal(d.quantize(q, rounding=ROUND_HALF_UP), locale=LOCALE)
 
 
+def betrag(value) -> str:
+    """Betrag mit genau zwei Nachkommastellen, ohne Tausendertrenner ('782,90')."""
+    d = _to_decimal(value).quantize(_CENT, rounding=ROUND_HALF_UP)
+    return format_decimal(d, format="0.00", locale=LOCALE)
+
+
 def prozent(value, digits: int = 2) -> str:
     """Erwartet einen Bruch (0.26601 -> '26,60 %')."""
     pattern = "0." + ("0" * digits) if digits else "0"
@@ -58,5 +64,6 @@ def quantize_cent(value) -> Decimal:
 def register_filters(env) -> None:
     env.filters["euro"] = euro
     env.filters["dezimal"] = dezimal
+    env.filters["betrag"] = betrag
     env.filters["prozent"] = prozent
     env.filters["datum"] = datum

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Wirtschaftsplan {{ period.label }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-xl font-semibold">Wirtschaftsplan · {{ period.label }}</h1>
+    <p class="text-sm text-slate-500">
+      {{ period.start_date | datum }} – {{ period.end_date | datum }}
+      {% if grid.previous_period_label %}
+        · Vorschläge aus „{{ grid.previous_period_label }}“
+      {% else %}
+        · keine Vorperiode – Vorschläge bleiben leer
+      {% endif %}
+    </p>
+  </div>
+  {% if not pdf %}
+  <div class="flex gap-2 no-print">
+    <a href="{{ url_for('budget_pdf', period_id=period.id) }}" class="btn-ghost border border-slate-300">PDF</a>
+    <form method="post" action="{{ url_for('budget_reset', period_id=period.id) }}"
+          onsubmit="return confirm('Alle überschriebenen Werte verwerfen und wieder Ist/Prognose anzeigen?')">
+      <button class="btn-ghost border border-slate-300">Auf Ist/Prognose zurücksetzen</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card mb-4 text-sm">
+  <div class="flex flex-wrap gap-x-8 gap-y-1">
+    <div>Anfangssaldo <span class="font-semibold">{{ grid.anfangssaldo | euro }}</span>
+      <span class="text-xs text-slate-400">({{ grid.anfangssaldo_source }})</span></div>
+    <div>Endsaldo (Prognose) <span class="font-semibold {{ 'text-red-600' if grid.endsaldo < 0 }}">{{ grid.endsaldo | euro }}</span></div>
+    <div>Einnahmen gesamt <span class="font-semibold">{{ grid.total_einnahmen | euro }}</span></div>
+    <div>Ausgaben gesamt <span class="font-semibold">{{ grid.total_ausgaben | euro }}</span></div>
+    <div>Differenz <span class="font-semibold {{ 'text-red-600' if grid.total_differenz < 0 }}">{{ grid.total_differenz | euro }}</span></div>
+  </div>
+  {% if not pdf %}
+  <div class="mt-2 flex flex-wrap gap-x-4 text-xs text-slate-500">
+    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-green-200 align-middle"></span> Ist (gebucht)</span>
+    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-slate-200 align-middle"></span> Prognose (Vorjahr)</span>
+    <span><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-200 align-middle"></span> manuell überschrieben</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if pdf %}
+  {% include "budget/_grid.html" %}
+{% else %}
+<form method="post" action="{{ url_for('budget_save', period_id=period.id) }}">
+  {% include "budget/_grid.html" %}
+  <div class="mt-4 flex gap-2 no-print">
+    <button class="btn-primary">Speichern</button>
+    <a href="{{ url_for('budget_view', period_id=period.id) }}" class="btn-ghost border border-slate-300">Verwerfen</a>
+  </div>
+</form>
+{% endif %}
+
+{% endblock %}
