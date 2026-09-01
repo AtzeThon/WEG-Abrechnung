@@ -23,8 +23,23 @@
   </div>
 
   {% if period %}
+  {% if period.status.value == 'final' %}
+  <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+    Diese Periode ist abgeschlossen. Zum Ändern in der Übersicht „Auf Entwurf zurücksetzen“ wählen.
+  </p>
+  {% endif %}
+
   <div class="card">
-    <h2 class="font-medium mb-3">Saldovortrag Hausgeld je Eigentümer</h2>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-medium">Saldovortrag Hausgeld je Eigentümer</h2>
+      {% if has_previous and period.status.value != 'final' %}
+      <button type="submit" formaction="{{ url_for('periods_carry_forward', period_id=period.id) }}"
+              formmethod="post" class="text-sm text-blue-600 hover:underline"
+              onclick="return confirm('Rücklagen-Anfangssaldo und Saldovortrag je Eigentümer mit den Endsalden der Vorperiode überschreiben?')">
+        ↧ Salden aus Vorperiode übernehmen
+      </button>
+      {% endif %}
+    </div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {% for o in owners %}
       <label class="block">

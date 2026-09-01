@@ -252,6 +252,21 @@ def imports_commit(request: Request, batch_id: int, db: Session = Depends(get_db
     if batch is None or batch.status != ImportBatchStatus.ENTWURF:
         flash(request, "Import kann nicht gebucht werden.", "error")
         return RedirectResponse(request.url_for("imports_index"), status_code=status.HTTP_303_SEE_OTHER)
+
+    from app.services.periods import locked_period_for_date
+
+    for row in batch.rows:
+        if row.include and row.booking_date and locked_period_for_date(db, row.booking_date):
+            flash(
+                request,
+                f"Zeile {row.line_no}: {row.booking_date:%d.%m.%Y} liegt in einem "
+                "abgeschlossenen Zeitraum. Import nicht möglich.",
+                "error",
+            )
+            return RedirectResponse(
+                request.url_for("imports_review", batch_id=batch.id),
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
     try:
         created = svc.commit_batch(db, batch)
     except ValueError as exc:

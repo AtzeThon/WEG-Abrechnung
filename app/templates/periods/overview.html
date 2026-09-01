@@ -10,16 +10,19 @@
     <p class="text-sm text-slate-500">
       {{ period.start_date | datum }} – {{ period.end_date | datum }} ·
       <span class="{{ 'text-green-700' if period.status.value == 'final' else 'text-amber-600' }}">
-        {{ 'final' if period.status.value == 'final' else 'Entwurf' }}
+        {{ 'abgeschlossen (Buchungen gesperrt)' if period.status.value == 'final' else 'Entwurf' }}
       </span>
     </p>
   </div>
   <div class="flex gap-2 no-print">
+    {% if period.status.value != 'final' %}
     <a href="{{ url_for('periods_edit', period_id=period.id) }}" class="btn-ghost border border-slate-300">Anfangswerte / Zähler</a>
-    <form method="post" action="{{ url_for('periods_set_status', period_id=period.id) }}">
+    {% endif %}
+    <form method="post" action="{{ url_for('periods_set_status', period_id=period.id) }}"
+          onsubmit="return confirm({{ ('Periode wieder öffnen? Buchungen im Zeitraum werden wieder änderbar.' if period.status.value == 'final' else 'Periode abschließen? Buchungen im Zeitraum werden gesperrt.') | tojson }})">
       <input type="hidden" name="target" value="{{ 'draft' if period.status.value == 'final' else 'final' }}">
       <button class="btn-ghost border border-slate-300">
-        {{ 'Auf Entwurf zurücksetzen' if period.status.value == 'final' else 'Als final markieren' }}
+        {{ 'Wieder öffnen (Entwurf)' if period.status.value == 'final' else 'Abrechnung abschließen' }}
       </button>
     </form>
   </div>

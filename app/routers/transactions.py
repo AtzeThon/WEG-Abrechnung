@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 from app import auth
 from app.database import get_db
 from app.models import Account, CostType, Owner, Transaction
+from app.services.periods import locked_period_for_date
 from app.templating import templates
 from app.web import flash, parse_date, parse_decimal
 
@@ -109,6 +110,20 @@ def transactions_new(request: Request, db: Session = Depends(get_db), account_id
     )
 
 
+def _locked_message(db: Session, *dates) -> str | None:
+    """Fällt eines der Daten in eine abgeschlossene (finale) Periode?"""
+    for d in dates:
+        if d is None:
+            continue
+        period = locked_period_for_date(db, d)
+        if period is not None:
+            return (
+                f"Der {d:%d.%m.%Y} liegt im abgeschlossenen Zeitraum „{period.label}“. "
+                "Setze die Periode zuerst auf „Entwurf“ zurück, um Buchungen zu ändern."
+            )
+    return None
+
+
 def _form_values(
     booking_date: str, payee: str, account_id: int, cost_type_id: int,
     owner_id: str | None, amount: str, note: str,
@@ -147,6 +162,11 @@ def transactions_create(
         return RedirectResponse(request.url_for("transactions_new"), status_code=status.HTTP_303_SEE_OTHER)
     if values["amount"] is None:
         flash(request, "Betrag ist erforderlich.", "error")
+        return RedirectResponse(request.url_for("transactions_new"), status_code=status.HTTP_303_SEE_OTHER)
+
+    locked = _locked_message(db, values["booking_date"])
+    if locked:
+        flash(request, locked, "error")
         return RedirectResponse(request.url_for("transactions_new"), status_code=status.HTTP_303_SEE_OTHER)
 
     db.add(Transaction(**values))
@@ -196,6 +216,12 @@ def transactions_update(
         return RedirectResponse(
             request.url_for("transactions_edit", txn_id=txn_id), status_code=status.HTTP_303_SEE_OTHER
         )
+    locked = _locked_message(db, txn.booking_date, values["booking_date"])
+    if locked:
+        flash(request, locked, "error")
+        return RedirectResponse(
+            request.url_for("transactions_edit", txn_id=txn_id), status_code=status.HTTP_303_SEE_OTHER
+        )
     for key, value in values.items():
         setattr(txn, key, value)
     db.commit()
@@ -207,6 +233,12 @@ def transactions_update(
 def transactions_delete(request: Request, txn_id: int, db: Session = Depends(get_db)):
     txn = db.get(Transaction, txn_id)
     if txn is not None:
+        locked = _locked_message(db, txn.booking_date)
+        if locked:
+            flash(request, locked, "error")
+            return RedirectResponse(
+                request.url_for("transactions_list"), status_code=status.HTTP_303_SEE_OTHER
+            )
         db.delete(txn)
         db.commit()
         flash(request, "Buchung gelöscht.")

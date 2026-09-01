@@ -20,6 +20,7 @@ from app.models import (
 )
 from app.models.enums import AllocationStrategy, CostCategory, PeriodStatus
 from app.services.billing import compute_period
+from app.services.periods import carry_forward_balances, previous_period, set_status
 from app.templating import templates
 from app.web import flash, parse_date, parse_decimal
 
@@ -108,7 +109,32 @@ def periods_edit(request: Request, period_id: int, db: Session = Depends(get_db)
             "carryover": carryover,
             "zaehler_cost_types": _zaehler_cost_types(db),
             "overrides": overrides,
+            "has_previous": previous_period(db, period) is not None,
         },
+    )
+
+
+@router.post("/{period_id}/vorperiode-uebernehmen", name="periods_carry_forward")
+def periods_carry_forward(request: Request, period_id: int, db: Session = Depends(get_db)):
+    period = db.get(BillingPeriod, period_id)
+    if period is None:
+        flash(request, "Periode nicht gefunden.", "error")
+        return RedirectResponse(request.url_for("periods_list"), status_code=status.HTTP_303_SEE_OTHER)
+    if period.status == PeriodStatus.FINAL:
+        flash(request, "Abgeschlossene Periode – zuerst auf Entwurf zurücksetzen.", "error")
+    else:
+        prev = carry_forward_balances(db, period)
+        if prev is None:
+            flash(request, "Keine Vorperiode gefunden.", "error")
+        else:
+            db.commit()
+            flash(
+                request,
+                f"Anfangswerte aus „{prev.label}“ übernommen "
+                "(Rücklagen-Anfangssaldo und Saldovortrag je Eigentümer). Bitte prüfen.",
+            )
+    return RedirectResponse(
+        request.url_for("periods_edit", period_id=period_id), status_code=status.HTTP_303_SEE_OTHER
     )
 
 
@@ -118,6 +144,16 @@ async def periods_update(request: Request, period_id: int, db: Session = Depends
     if period is None:
         flash(request, "Periode nicht gefunden.", "error")
         return RedirectResponse(request.url_for("periods_list"), status_code=status.HTTP_303_SEE_OTHER)
+    if period.status == PeriodStatus.FINAL:
+        flash(
+            request,
+            "Die Periode ist abgeschlossen. Zum Ändern zuerst auf „Entwurf“ zurücksetzen.",
+            "error",
+        )
+        return RedirectResponse(
+            request.url_for("period_overview", period_id=period_id),
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
 
     form = await request.form()
     period.label = str(form.get("label", period.label)).strip()
@@ -181,17 +217,17 @@ def periods_set_status(
 ):
     period = db.get(BillingPeriod, period_id)
     if period is not None:
-        if target == "final":
-            period.status = PeriodStatus.FINAL
-            from datetime import datetime
-
-            period.finalized_at = datetime.now()
-            flash(request, f"Periode „{period.label}“ ist jetzt final.")
-        else:
-            period.status = PeriodStatus.DRAFT
-            period.finalized_at = None
-            flash(request, f"Periode „{period.label}“ ist wieder ein Entwurf.")
+        final = target == "final"
+        set_status(db, period, final=final)
         db.commit()
+        if final:
+            flash(
+                request,
+                f"Periode „{period.label}“ abgeschlossen. Buchungen im Zeitraum "
+                f"{period.start_date:%d.%m.%Y}–{period.end_date:%d.%m.%Y} sind jetzt gesperrt.",
+            )
+        else:
+            flash(request, f"Periode „{period.label}“ ist wieder ein Entwurf (Buchungen entsperrt).")
     return RedirectResponse(
         request.url_for("period_overview", period_id=period_id), status_code=status.HTTP_303_SEE_OTHER
     )
