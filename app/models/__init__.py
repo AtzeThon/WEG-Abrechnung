@@ -7,6 +7,7 @@ from app.models.billing_period import (
     BillingPeriod,
     PeriodOpeningBalance,
 )
+from app.models.budget import BudgetEntry
 from app.models.cost_type import CostType
 from app.models.csv_import import ImportBatch, ImportProfile, ImportRow
 from app.models.enums import (
@@ -29,6 +30,7 @@ __all__ = [
     "AllocationOverride",
     "AllocationStrategy",
     "BillingPeriod",
+    "BudgetEntry",
     "CostCategory",
     "CostKind",
     "CostType",
