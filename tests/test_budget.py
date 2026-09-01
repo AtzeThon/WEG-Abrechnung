@@ -61,11 +61,13 @@ def data(db_session):
 
 
 def test_betrag_filter_zwei_nachkommastellen():
-    from app.locale import betrag
+    from app.locale import betrag, geld
 
     assert betrag(Decimal("782.9")) == "782,90"
     assert betrag(Decimal("1234.5")) == "1234,50"  # kein Tausendertrenner im Eingabefeld
     assert betrag(None) == "0,00"
+    assert geld(Decimal("1234.5")) == "1.234,50"  # Anzeige mit Tausendertrenner
+    assert geld(Decimal("-11769.86")) == "-11.769,86"
 
 
 def test_month_windows_labels(data):

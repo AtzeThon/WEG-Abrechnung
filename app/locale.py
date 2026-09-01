@@ -40,6 +40,12 @@ def betrag(value) -> str:
     return format_decimal(d, format="0.00", locale=LOCALE)
 
 
+def geld(value) -> str:
+    """Kompakter Geldbetrag: Tausendertrenner, zwei Nachkommastellen, kein Symbol."""
+    d = _to_decimal(value).quantize(_CENT, rounding=ROUND_HALF_UP)
+    return format_decimal(d, format="#,##0.00", locale=LOCALE)
+
+
 def prozent(value, digits: int = 2) -> str:
     """Erwartet einen Bruch (0.26601 -> '26,60 %')."""
     pattern = "0." + ("0" * digits) if digits else "0"
@@ -65,5 +71,6 @@ def register_filters(env) -> None:
     env.filters["euro"] = euro
     env.filters["dezimal"] = dezimal
     env.filters["betrag"] = betrag
+    env.filters["geld"] = geld
     env.filters["prozent"] = prozent
     env.filters["datum"] = datum
