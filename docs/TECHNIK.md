@@ -227,6 +227,9 @@ bei genau einer), `budget_view` (Grid als `<form>`), `budget_save`,
 `budget_reset`, `budget_pdf` (gleiche Vorlage, `pdf=1`; 303-Fallback ohne
 WeasyPrint). Registrierung in `app/main.py::_register_routers`. Das Raster ist
 `table-fixed` mit einheitlich schmalen Spalten; die Überschriften brechen um.
+Für das PDF übergibt die Route `pdf.BUDGET_PRINT_CSS` an `render_pdf(..., extra_css=)`
+(A4 quer, 6 pt, Tabelle auf volle Seitenbreite) und blendet Kostenart-Spalten
+ohne Wert aus (`_grid_context`, nur bei `pdf=True`).
 Jinja-Filter in `app/locale.py`: `betrag` für die Eingabefelder (zwei
 Nachkommastellen, kein Tausendertrenner), `geld` für die Anzeigezahlen im
 Raster (Tausendertrenner, zwei Nachkommastellen, kein €-Symbol).

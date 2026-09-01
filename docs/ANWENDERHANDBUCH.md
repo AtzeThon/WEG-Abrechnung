@@ -233,8 +233,10 @@ hier nicht mit.
   automatischen Wert abweichen; setzt du ein Feld wieder auf den Ist-/Prognose-
   Wert (oder leerst es), wird die Überschreibung entfernt.
 - **Auf Ist/Prognose zurücksetzen** verwirft alle Überschreibungen der Periode.
-- **PDF** erzeugt die Tabelle als PDF (auf dem Raspberry Pi; ohne WeasyPrint
-  erscheint stattdessen ein Hinweis).
+- **PDF** erzeugt die Tabelle als PDF im Querformat (auf dem Raspberry Pi; ohne
+  WeasyPrint erscheint stattdessen ein Hinweis). Für ein kompaktes Blatt werden
+  im PDF Kostenart-Spalten **ohne Wert weggelassen**; die Bildschirmansicht zeigt
+  weiterhin alle.
 
 ---
 
