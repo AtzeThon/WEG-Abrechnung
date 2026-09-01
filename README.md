@@ -4,6 +4,15 @@ Selbst gehostete Web­anwendung für die **Hausgeld- und Betriebskosten­abrechn
 einer kleinen Wohnungs­eigentümer­gemeinschaft (4 Einheiten). Ersetzt die bisher in
 Excel geführte Jahresabrechnung. Läuft dauerhaft auf einem Raspberry Pi.
 
+## Dokumentation
+
+- [`docs/ANWENDERHANDBUCH.md`](docs/ANWENDERHANDBUCH.md) – Bedienung: Stammdaten,
+  Buchungen, CSV-Import, Abrechnungsperiode eröffnen/abschließen, Umbuchungen,
+  Einzelabrechnungen, Fehlerdiagnose.
+- [`docs/TECHNIK.md`](docs/TECHNIK.md) – Architektur, Datenmodell, Engine,
+  Konfiguration, Migrationen, Betrieb, Tests.
+- [`deploy/DEPLOY.md`](deploy/DEPLOY.md) – Installation auf Raspberry Pi OS.
+
 ## Technik
 
 | Bereich    | Wahl |
