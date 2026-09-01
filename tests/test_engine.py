@@ -158,3 +158,28 @@ def test_datumsfilter_grenzen_inklusive():
     ]
     res = compute_billing(PeriodInput(p, q), owners, cts, txns, [])
     assert res.cost_types["X"].weg_total == Decimal("20")
+
+
+def test_ruecklagenbewegung_verschiebt_nur_zwischen_konten():
+    """Eine Rücklagen-Zuführung/-Entnahme lässt 'Saldo gesamt' unverändert."""
+    from datetime import date
+
+    from app.allocation.types import CostTypeInput, OwnerInput, PeriodInput, TxnInput
+
+    owners = [OwnerInput("E1", Decimal("600")), OwnerInput("E2", Decimal("400"))]
+    cts = [CostTypeInput("Rücklage", "ruecklage", "mea", "sonstiges")]
+    p = PeriodInput(date(2026, 1, 1), date(2026, 12, 31), reserve_opening_balance=Decimal("1000"))
+
+    base = compute_billing(p, owners, cts, [], [])
+    # Zuführung 300 durch E1 (eigentümerbezogen)
+    moved = compute_billing(
+        p, owners, cts,
+        [TxnInput(date(2026, 6, 1), "Rücklage", Decimal("300"), owner="E1")],
+        [],
+    )
+    e1_base, e1_moved = base.owner_result("E1"), moved.owner_result("E1")
+    assert e1_moved.reserve_endsaldo == e1_base.reserve_endsaldo + Decimal("300")
+    assert e1_moved.hausgeld_endsaldo == e1_base.hausgeld_endsaldo - Decimal("300")
+    assert e1_moved.total_saldo == e1_base.total_saldo  # Summe unverändert
+    # E2 unberührt
+    assert moved.owner_result("E2").total_saldo == base.owner_result("E2").total_saldo

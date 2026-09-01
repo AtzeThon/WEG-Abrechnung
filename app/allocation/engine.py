@@ -8,8 +8,10 @@ Schritte (entsprechen der fachlichen Vorgabe):
   5. Guthaben/Nachzahlung = Hausgeld - Kostenanteil
   6. Endsaldo Hausgeld = Saldovortrag + Sonderumlage - Investitionsanteil
                          + Guthaben/Nachzahlung  (+ Erstattung, aktuell 0)
+                         - Rücklagen-Zuführung + Rücklagen-Entnahme
   7. Rücklage je Eigentümer: Anfangssaldo (nach MEA) + Zuführung - Entnahme
   8. Saldo gesamt = Endsaldo Hausgeld + Endsaldo Rücklage
+     (eine Rücklagenbewegung verschiebt nur zwischen 6 und 7, Summe bleibt gleich)
 """
 
 from __future__ import annotations
@@ -184,12 +186,16 @@ def compute_billing(
         carryover = period.hausgeld_carryover.get(o.code, ZERO)
         erstattung = ZERO  # bewusst nicht verrechnet (siehe Plan)
 
+        # Rücklagenbewegungen sind Umbuchungen zwischen Hausgeld- und Rücklagenkonto:
+        # eine Zuführung fließt vom Hausgeldkonto ab, eine Entnahme fließt ihm zu.
         hausgeld_endsaldo = (
             carryover
             + sonderumlage_paid[o.code]
             - investition_share
             + guthaben
             + erstattung
+            - reserve_zufuehrung[o.code]
+            + reserve_entnahme[o.code]
         )
 
         reserve_opening = period.reserve_opening_balance * mea_fraction[o.code]
