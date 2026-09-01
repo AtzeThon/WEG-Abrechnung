@@ -36,7 +36,7 @@
   </thead>
   <tbody>
     {% for group, items in cost_groups.items() %}
-    <tr class="bg-slate-50"><td class="td font-medium" colspan="5">{{ group }}</td></tr>
+    <tr class="bg-slate-50"><td class="td font-bold" colspan="5">{{ group }}</td></tr>
     {% for ct in items %}
     <tr>
       <td class="td">{{ ct.name }}</td>
@@ -68,7 +68,7 @@
 
 <div class="grid sm:grid-cols-2 gap-6">
   <div class="card">
-    <h2 class="font-medium mb-2">Hausgeldkonto</h2>
+    <h2 class="font-bold mb-2">Hausgeldkonto</h2>
     <table class="w-full text-sm">
       <tbody>
         <tr><td class="td">Saldovortrag</td><td class="td text-right">{{ owner.carryover | euro }}</td></tr>
@@ -83,7 +83,7 @@
     </table>
   </div>
   <div class="card">
-    <h2 class="font-medium mb-2">Instandhaltungsrücklage</h2>
+    <h2 class="font-bold mb-2">Rücklage</h2>
     <table class="w-full text-sm">
       <tbody>
         <tr><td class="td">Anfangssaldo (Anteil)</td><td class="td text-right">{{ owner.reserve_opening | euro }}</td></tr>

@@ -21,7 +21,7 @@ def test_statement_web_zeigt_kernwerte(client, db_session):
     assert "2.671,45" in r.text          # Kostenanteil E1
     assert "2.820,00" in r.text          # geleistetes Hausgeld
     assert "148,55" in r.text            # Guthaben
-    assert "Instandhaltungsrücklage" in r.text
+    assert "Hausgeldkonto" in r.text and "Rücklage" in r.text
 
 
 def test_statement_unbekannter_eigentuemer_leitet_um(client, db_session):
