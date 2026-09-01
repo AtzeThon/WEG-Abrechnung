@@ -1,6 +1,6 @@
 # WEG-Abrechnung – Anwenderhandbuch
 
-Stand: siehe Git-Historie. Diese Anleitung beschreibt die Bedienung der
+Stand: September 2026. Diese Anleitung beschreibt die Bedienung der
 Webanwendung für die Jahresabrechnung einer kleinen Wohnungseigentümer­gemeinschaft.
 
 ---
@@ -12,7 +12,7 @@ Webanwendung für die Jahresabrechnung einer kleinen Wohnungseigentümer­gemein
 | **Eigentümer** | Eine Einheit der WEG (E1 … E4) mit **Miteigentumsanteil (MEA)**. Die MEA aller Eigentümer sollen sich zu **1000** summieren. |
 | **Konto** | Ein Bankkonto der WEG. Typ **Girokonto** (laufende Kosten, Hausgeld) oder **Rücklagenkonto**. Das Konto dient v. a. dem Abgleich mit dem Bankauszug – für die *Berechnung* zählt nur die Kostenart. |
 | **Kostenart** | Die Bezeichnung einer Buchung (z. B. „Gebäudeversicherung"). Jede Kostenart hat einen **fachlichen Typ** und – bei umlagefähigen Kosten – einen **Umlageschlüssel**. |
-| **Fachlicher Typ** | Steuert, *wie* eine Buchung in die Abrechnung einfließt: `Betriebskosten`, `Hausgeld`, `Sonderumlage`, `Investition`, `Rücklage`, `Erstattung/Nachzahlung`. |
+| **Fachlicher Typ** | Steuert, *wie* eine Buchung in die Abrechnung einfließt: `Betriebskosten`, `Hausgeld`, `Sonderumlage`, `Investition`, `Rücklage`, `Erstattung/Nachzahlung`, `Umbuchung` (neutral). |
 | **Umlageschlüssel** | Bei Betriebskosten: `MEA` (nach Anteilen), `Zähler` (Direkteingabe je Eigentümer), `Vorauszahlung` (nicht umlegen), `Proportional`. |
 | **Abrechnungsperiode / Wirtschaftsjahr** | Der Zeitraum, für den abgerechnet wird (z. B. 01.08.2025 – 31.07.2026). |
 | **Buchung** | Eine Kontobewegung: Datum, Zahlungspartner, Kostenart, optional Eigentümer, Betrag (**+** = Einzahlung, **–** = Ausgabe), Notiz. |
@@ -60,8 +60,9 @@ Für jede Kostenart:
 | **Hausgeld** | Monatliche Hausgeld-Einzahlungen der Eigentümer | Summe je Eigentümer = *geleistetes Hausgeld*. **Eigentümer ist Pflicht.** |
 | **Sonderumlage** | Von den Eigentümern beschlossene Sonderzahlung (z. B. zur Finanzierung einer Investition) | Einzahlung je Eigentümer, erhöht dessen *Endsaldo Hausgeld*. **Eigentümer ist Pflicht.** |
 | **Investition** | Investive Ausgabe (z. B. Heizungseinbau) | Gesamtbetrag wird **nach MEA** verteilt und vom *Endsaldo Hausgeld* abgezogen. |
-| **Rücklage** | Zuführung zur / Entnahme aus der Instandhaltungsrücklage | Positiv = Zuführung, negativ = Entnahme. Verschiebt zwischen *Endsaldo Rücklage* und *Endsaldo Hausgeld* (siehe 6.3). |
+| **Rücklage** | Zuführung zur / Entnahme aus der Rücklage | Positiv = Zuführung, negativ = Entnahme. Verschiebt zwischen *Endsaldo Rücklage* und *Endsaldo Hausgeld* (siehe 6.3). |
 | **Erstattung/Nachzahlung** | Ausgleich aus der Vorjahresabrechnung | **Wird derzeit nicht automatisch verrechnet** – siehe 6.4. |
+| **Umbuchung (neutral)** | Gegenbuchung einer Umbuchung zwischen Konten | **Keine** Wirkung auf die Abrechnung; nur für den Kontoauszug. Wird vom Umbuchungs-Assistenten automatisch verwendet (6.3). |
 
 > **Merke:** „Sonderzahlung Heizung" (was die Eigentümer *einzahlen*) ist Typ
 > **Sonderumlage**. „Heizungseinbau" (was an die Firma *ausgezahlt* wird) ist Typ
@@ -115,11 +116,29 @@ Menü **Import**.
 Zeilen, die keine WEG-Kostenart sind (interne Umbuchungen, „man. Buchungen"
 o. ä.), einfach **abwählen** (Häkchen „einbeziehen" entfernen).
 
+### 4.4 Umbuchung zwischen Konten
+
+**Buchungen → ↔ Umbuchung** – verschiebt Geld zwischen Rücklagen- und
+Hausgeldkonto und legt dabei automatisch die zwei korrekten Buchungen an.
+Details siehe 6.3.
+
 ---
 
 ## 5. Abrechnungsperiode
 
 Menü **Abrechnungen**.
+
+### 5.0 Typischer Ablauf eines Wirtschaftsjahres
+
+1. **Am Jahresanfang:** neue Abrechnungsperiode anlegen (5.1), Anfangswerte
+   erfassen bzw. **„Salden aus Vorperiode übernehmen"**.
+2. **Laufend:** Buchungen erfassen – einzeln (4.1) oder per **CSV-Import** (4.3).
+   Zwischendurch die Perioden-Übersicht (5.2) zur Kontrolle ansehen.
+3. **Nach Jahresende:** Heizkostenabrechnung des Messdienstes eingetragen (6.5),
+   Rücklagen-Zuführungen/-Entnahmen als Umbuchung erfasst (6.3), alles geprüft.
+4. **Abschluss:** Einzelabrechnungen als PDF erzeugen (5.3), an die Eigentümer
+   verteilen, dann **„Abrechnung abschließen"** (5.4) – die Buchungen des
+   Zeitraums sind danach gesperrt.
 
 ### 5.1 Neue Periode eröffnen
 
