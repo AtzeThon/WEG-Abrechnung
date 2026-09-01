@@ -41,9 +41,10 @@ class CostKind(str, enum.Enum):
     BETRIEBSKOSTEN = "betriebskosten"   # umlagefähig, wird auf alle Eigentümer verteilt
     HAUSGELD = "hausgeld"               # monatliche Einzahlung des Eigentümers
     ERSTATTUNG = "erstattung"           # Ausgleich aus Vorjahresabrechnung (aktuell nicht verrechnet)
-    RUECKLAGE = "ruecklage"             # Zuführung/Entnahme Instandhaltungsrücklage
+    RUECKLAGE = "ruecklage"             # Zuführung/Entnahme Rücklage
     SONDERUMLAGE = "sonderumlage"       # eigentümerbezogene Sonderzahlung (z. B. Heizungsmodernisierung)
     INVESTITION = "investition"         # investive Ausgabe, getrennt von der laufenden Umlage geführt
+    UMBUCHUNG = "umbuchung"             # Gegenbuchung einer Umbuchung – ohne Wirkung auf die Abrechnung
 
     @property
     def label(self) -> str:
@@ -57,6 +58,7 @@ _KIND_LABELS = {
     CostKind.RUECKLAGE: "Rücklage",
     CostKind.SONDERUMLAGE: "Sonderumlage",
     CostKind.INVESTITION: "Investition",
+    CostKind.UMBUCHUNG: "Umbuchung (neutral)",
 }
 
 

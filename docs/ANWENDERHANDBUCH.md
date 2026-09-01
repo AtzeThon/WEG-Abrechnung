@@ -175,14 +175,13 @@ erneut abschließen.
 
 ### 6.1 Entnahme aus der Rücklage für eine Reparatur
 
-1. Kostenart **„Instandhaltung"** (Typ *Betriebskosten*, Umlageschlüssel meist
-   *MEA*) – die Rechnung der Handwerksfirma als **Ausgabe** buchen (Konto =
-   das Konto, von dem gezahlt wurde).
-2. Wurde direkt vom Rücklagenkonto gezahlt: die Ausgabe auf das **Rücklagenkonto**
-   buchen. Zusätzlich eine Buchung Typ **Rücklage** mit **negativem** Betrag
-   („Entnahme") in gleicher Höhe – damit sinkt der *Endsaldo Rücklage*, und der
-   entsprechende Betrag wird dem *Endsaldo Hausgeld* gutgeschrieben (die
-   Reparatur wird ja trotzdem über den Kostenanteil auf alle umgelegt).
+1. Die **Rechnung der Handwerksfirma** als Ausgabe buchen – Kostenart z. B.
+   „Instandhaltung" (Typ *Betriebskosten*, Umlageschlüssel meist *MEA*), Konto =
+   das Konto, von dem tatsächlich gezahlt wurde. Die Kosten werden über den
+   Kostenanteil auf alle Eigentümer umgelegt.
+2. Falls die Rücklage die Kosten (mit-)tragen soll: über **Buchungen → ↔ Umbuchung**
+   den Betrag vom Rücklagenkonto auf das Girokonto umbuchen (= *Entnahme*, siehe
+   6.3). Der *Endsaldo Rücklage* sinkt, der *Endsaldo Hausgeld* steigt entsprechend.
 
 ### 6.2 Sonderumlage zur Finanzierung einer Investition
 
@@ -195,22 +194,31 @@ erneut abschließen.
 
 ### 6.3 Umbuchung zwischen Rücklagen- und Hausgeldkonto
 
-Eine Buchung Typ **Rücklage**:
+Dafür gibt es einen eigenen Assistenten: **Buchungen → ↔ Umbuchung**.
 
-| Betrag | Bedeutung | Wirkung |
+Eingabe: **Von Konto**, **Nach Konto**, **Betrag** (immer positiv), Datum,
+optional ein Eigentümer, Notiz. Die App legt automatisch **zwei Buchungen** an:
+
+- die Buchung **auf dem Rücklagenkonto** bekommt den fachlichen Typ *Rücklage* –
+  sie erhöht bzw. senkt den **Endsaldo Rücklage** und wirkt **gegengleich** auf den
+  **Endsaldo Hausgeld**;
+- die Gegenbuchung auf dem anderen Konto ist **neutral** (Typ *Umbuchung*) und
+  taucht nur im Kontoauszug auf, ohne die Abrechnung zu verändern.
+
+| Richtung | Bedeutung | Wirkung |
 |---|---|---|
-| **positiv** | Zuführung (Hausgeld → Rücklage) | Endsaldo Rücklage **+**, Endsaldo Hausgeld **−** |
-| **negativ** | Entnahme (Rücklage → Hausgeld) | Endsaldo Rücklage **−**, Endsaldo Hausgeld **+** |
+| Girokonto → Rücklagenkonto | **Zuführung** | Endsaldo Rücklage **+**, Endsaldo Hausgeld **−** |
+| Rücklagenkonto → Girokonto | **Entnahme** | Endsaldo Rücklage **−**, Endsaldo Hausgeld **+** |
 
-Betrifft die Umbuchung nur **einen** Eigentümer, die Buchung **mit Eigentümer**
-erfassen – dann wirkt sie nur bei ihm. Ohne Eigentümer wird sie nach MEA verteilt.
-Der **Saldo gesamt** je Eigentümer bleibt bei einer reinen Umbuchung unverändert
-(es wird nur zwischen den beiden Konten verschoben).
+Ohne Eigentümer wird die Umbuchung nach MEA auf alle verteilt; mit Eigentümer
+wirkt sie nur bei diesem. Der **Saldo gesamt** je Eigentümer bleibt bei einer
+reinen Umbuchung **unverändert** – es wird nur zwischen den beiden Konten
+verschoben.
 
-Damit der Bankauszug stimmt, die Gegenbuchung auf dem anderen Konto mit einer
-neutralen Kostenart (Typ *Betriebskosten*, Umlageschlüssel **Vorauszahlung** –
-zählt 0) erfassen; sie taucht dann im Kontoauszug auf, ohne die Abrechnung zu
-verändern.
+> Du kannst dieselben zwei Buchungen auch von Hand anlegen (eine Kostenart Typ
+> *Rücklage* auf dem Rücklagenkonto, eine Kostenart Typ *Umbuchung* auf dem
+> Girokonto). Buche **nicht** dieselbe Rücklage-Kostenart auf beiden Konten – dann
+> heben sich Zuführung und Entnahme gegenseitig auf und es passiert nichts.
 
 ### 6.4 Erstattung / Nachzahlung aus dem Vorjahr
 

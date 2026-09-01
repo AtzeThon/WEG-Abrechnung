@@ -13,6 +13,7 @@ from app import auth
 from app.database import get_db
 from app.models import Account, CostType, Owner, Transaction
 from app.services.periods import locked_period_for_date
+from app.services.transfers import record_transfer
 from app.templating import templates
 from app.web import flash, parse_date, parse_decimal
 
@@ -174,6 +175,49 @@ def transactions_create(
     flash(request, "Buchung gespeichert.")
     target = "transactions_new" if again is not None else "transactions_list"
     return RedirectResponse(request.url_for(target), status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/umbuchung", response_class=HTMLResponse, name="transfer_new")
+def transfer_new(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse(request, "transactions/transfer.html", _lookups(db))
+
+
+@router.post("/umbuchung", name="transfer_create")
+def transfer_create(
+    request: Request,
+    from_account_id: int = Form(...),
+    to_account_id: int = Form(...),
+    amount: str = Form(...),
+    booking_date: str = Form(...),
+    owner_id: str = Form(None),
+    note: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    d = parse_date(booking_date)
+    back = RedirectResponse(request.url_for("transfer_new"), status_code=status.HTTP_303_SEE_OTHER)
+    if d is None:
+        flash(request, "Datum ist erforderlich.", "error")
+        return back
+    locked = _locked_message(db, d)
+    if locked:
+        flash(request, locked, "error")
+        return back
+    try:
+        record_transfer(
+            db,
+            from_account_id=from_account_id,
+            to_account_id=to_account_id,
+            amount=parse_decimal(amount, default=None),
+            booking_date=d,
+            owner_id=_int_or_none(owner_id),
+            note=note,
+        )
+    except ValueError as exc:
+        flash(request, str(exc), "error")
+        return back
+    db.commit()
+    flash(request, "Umbuchung erfasst (zwei Buchungen angelegt).")
+    return RedirectResponse(request.url_for("transactions_list"), status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/{txn_id}/bearbeiten", response_class=HTMLResponse, name="transactions_edit")

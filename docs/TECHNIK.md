@@ -78,9 +78,12 @@ Strings (`Enum(..., native_enum=False)`).
 | `import_batches` | hochgeladener Kontoauszug | `account_id`, `filename`, `raw_content` (BLOB), `profile_id?`, `status` (`entwurf`/`importiert`/`verworfen`) |
 | `import_rows` | geparste CSV-Zeile + Zuordnung | `batch_id`, `line_no`, `booking_date?`, `payee`, `purpose`, `amount?`, `raw` (JSON), `parse_error`, `is_duplicate`, `include`, `cost_type_id?`, `owner_id?` |
 
-Enums (`app/models/enums.py`): `AccountType`, `CostCategory`, `CostKind`,
+Enums (`app/models/enums.py`): `AccountType`, `CostCategory`, `CostKind`
+(inkl. `umbuchung` = neutrale Gegenbuchung, von der Engine ignoriert),
 `AllocationStrategy`, `PeriodStatus`, `TransactionSource`, `ImportBatchStatus`.
-`OWNER_REQUIRED_KINDS = {hausgeld, erstattung, sonderumlage}`.
+`OWNER_REQUIRED_KINDS = {hausgeld, erstattung, sonderumlage}`. Der `kind`-Wert wird
+als Enum-**Name** (Großbuchstaben) gespeichert; neue Werte brauchen keine Migration
+(VARCHAR ohne CHECK).
 
 `transactions.import_row_id → import_rows.id` und die (view-only) Beziehung
 `ImportRow.transaction` bilden die Rückverfolgung; die FK `import_rows.transaction_id`
@@ -183,6 +186,10 @@ Rohdatei bleibt in `raw_content` für erneutes Parsen bei Mapping-Änderung.
   `reserve_endsaldo_total` und je Eigentümer `hausgeld_endsaldo` der Vorperiode
   als Anfangswerte.
 - `set_status(db, period, final=...)` – Status + `finalized_at`.
+
+`app/services/transfers.py::record_transfer(...)` – Umbuchung zwischen Konten:
+legt zwei Buchungen an (Rücklagenkonto-Bein Typ `ruecklage`, anderes Bein Typ
+`umbuchung`). Die benötigten Kostenarten werden bei Bedarf automatisch angelegt.
 
 ---
 

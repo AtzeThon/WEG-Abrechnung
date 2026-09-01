@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}Umbuchung · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-1">Umbuchung zwischen Konten</h1>
+<p class="text-sm text-slate-500 mb-4 max-w-xl">
+  Verschiebt Geld zwischen Rücklagen- und Hausgeldkonto. Es werden automatisch
+  <strong>zwei Buchungen</strong> angelegt: die auf dem Rücklagenkonto wirkt auf den
+  Endsaldo Rücklage (und gegengleich auf den Endsaldo Hausgeld), die Gegenbuchung
+  auf dem anderen Konto ist neutral (nur für den Kontoauszug).
+</p>
+
+<form method="post" action="{{ url_for('transfer_create') }}" class="card max-w-xl space-y-4">
+  <div class="grid grid-cols-2 gap-4">
+    <label class="block">
+      <span class="label">Von Konto <span class="text-red-500">*</span></span>
+      <select name="from_account_id" class="input" required>
+        {% for a in accounts %}<option value="{{ a.id }}">{{ a.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="block">
+      <span class="label">Nach Konto <span class="text-red-500">*</span></span>
+      <select name="to_account_id" class="input" required>
+        {% for a in accounts %}<option value="{{ a.id }}" {{ 'selected' if loop.index == 2 }}>{{ a.name }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    {{ field('amount', 'Betrag (€)', required=True, hint='positiver Betrag') }}
+    {{ field('booking_date', 'Datum', required=True, hint='TT.MM.JJJJ') }}
+  </div>
+
+  <label class="block">
+    <span class="label">Nur für einen Eigentümer (optional)</span>
+    <select name="owner_id" class="input">
+      <option value="">– alle (nach MEA) –</option>
+      {% for o in owners %}<option value="{{ o.id }}">{{ o.code }} {{ o.name }}</option>{% endfor %}
+    </select>
+  </label>
+
+  {{ field('note', 'Notiz', hint='z. B. „Zuführung Rücklage 2026" oder „Entnahme für Dachreparatur"') }}
+
+  <div class="flex gap-2 pt-2">
+    <button class="btn-primary">Umbuchung erfassen</button>
+    <a href="{{ url_for('transactions_list') }}" class="btn-ghost">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}
