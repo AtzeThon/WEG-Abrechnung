@@ -29,6 +29,10 @@ def _load(db: Session, period_id: int) -> BillingPeriod | None:
 
 def _grid_context(db: Session, period: BillingPeriod, *, pdf: bool) -> dict:
     grid = budget_service.build_grid(db, period)
+    if pdf:
+        # Fürs Papier nur Kostenarten mit einem Wert – leere Spalten weglassen.
+        grid.income_types = [c for c in grid.income_types if grid.totals.get(c.id)]
+        grid.expense_types = [c for c in grid.expense_types if grid.totals.get(c.id)]
     return {"period": period, "grid": grid, "pdf": pdf}
 
 
@@ -115,9 +119,9 @@ def budget_pdf(request: Request, period_id: int, db: Session = Depends(get_db)):
     ctx = _grid_context(db, period, pdf=True)
     html = templates.get_template("budget/view.html").render(request=request, **ctx)
     try:
-        from app.pdf import render_pdf
+        from app.pdf import BUDGET_PRINT_CSS, render_pdf
 
-        pdf_bytes = render_pdf(html, base_url=str(request.base_url))
+        pdf_bytes = render_pdf(html, base_url=str(request.base_url), extra_css=BUDGET_PRINT_CSS)
     except RuntimeError as exc:
         flash(request, str(exc), "error")
         return RedirectResponse(

@@ -9,7 +9,7 @@
   {% set c = m.cells[ct.id] %}
   <td class="td !px-1 py-1 text-right {{ src_bg[c.source] }}">
     {% if pdf %}
-      <span class="text-xs">{{ '' if c.source == 'leer' else c.effective | betrag }}</span>
+      <span class="text-xs">{{ '' if c.source == 'leer' else c.effective | geld }}</span>
     {% else %}
       <input type="text" inputmode="decimal" name="v_{{ m.index }}_{{ ct.id }}"
              value="{{ '' if c.source == 'leer' else c.effective | betrag }}"
@@ -20,11 +20,11 @@
 {% endmacro %}
 
 <div class="card overflow-x-auto">
-  <table class="text-sm table-fixed" style="width: {{ ncols * 5.5 + 7.5 }}rem">
+  <table class="text-sm table-fixed{{ ' w-full' if pdf }}"{% if not pdf %} style="width: {{ ncols * 5.5 + 7.5 }}rem"{% endif %}>
     <caption class="text-left text-xs text-slate-400 pb-2">Alle Beträge in €, Ausgaben als positive Werte.</caption>
     <colgroup>
-      <col style="width: 7.5rem">
-      {% for _ in range(ncols) %}<col style="width: 5.5rem">{% endfor %}
+      <col{% if not pdf %} style="width: 7.5rem"{% else %} style="width: 9%"{% endif %}>
+      {% for _ in range(ncols) %}<col{% if not pdf %} style="width: 5.5rem"{% endif %}>{% endfor %}
     </colgroup>
     <thead>
       <tr class="align-bottom">

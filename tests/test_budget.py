@@ -20,6 +20,7 @@ def data(db_session):
     hausgeld = CostType(name="Hausgeld", kind=CostKind.HAUSGELD, sort_order=1)
     gas = CostType(name="Abschlag Gas/Strom/Wasser", kind=CostKind.BETRIEBSKOSTEN, sort_order=2)
     garten = CostType(name="Gartenpflege", kind=CostKind.BETRIEBSKOSTEN, sort_order=3)
+    ungenutzt = CostType(name="Ungenutzte Kostenart", kind=CostKind.BETRIEBSKOSTEN, sort_order=4)
     e1 = Owner(code="E1", mea=Decimal("500"))
     e2 = Owner(code="E2", mea=Decimal("500"))
 
@@ -31,7 +32,7 @@ def data(db_session):
         label="Abrechnung 2026", start_date=date(2025, 8, 1), end_date=date(2026, 7, 31),
         status=PeriodStatus.DRAFT,
     )
-    db_session.add_all([giro, ruecklage, hausgeld, gas, garten, e1, e2, prev, cur])
+    db_session.add_all([giro, ruecklage, hausgeld, gas, garten, ungenutzt, e1, e2, prev, cur])
     db_session.commit()
 
     # Vorperiode: Gas im 1. + 2. Monat (Aug/Sep 2024), Garten im 3. Monat (Oktober 2024)
@@ -57,7 +58,7 @@ def data(db_session):
     )
     db_session.commit()
     return dict(giro=giro, ruecklage=ruecklage, hausgeld=hausgeld, gas=gas,
-               garten=garten, prev=prev, cur=cur)
+               garten=garten, ungenutzt=ungenutzt, prev=prev, cur=cur)
 
 
 def test_betrag_filter_zwei_nachkommastellen():
@@ -197,6 +198,20 @@ def test_budget_save_und_reset_ueber_route(client, db_session, data):
     client.post(f"/wirtschaftsplan/{cur.id}/zuruecksetzen", follow_redirects=True)
     db_session.expire_all()
     assert not db_session.scalars(select(BudgetEntry).where(BudgetEntry.period_id == cur.id)).all()
+
+
+def test_budget_pdf_ohne_leere_spalten_und_ohne_fehler(client, db_session, data):
+    # „garten" hat keine Ist-/Vorschlags-/Manuellwerte -> Spalte fällt im PDF weg.
+    from app.routers.budget import _grid_context
+
+    ctx = _grid_context(db_session, data["cur"], pdf=True)
+    names = [c.name for c in ctx["grid"].expense_types]
+    assert data["gas"].name in names
+    assert data["ungenutzt"].name not in names
+
+    # Route rendert das Template (pdf=1); ohne WeasyPrint -> 303-Fallback, kein 500.
+    r = client.get(f"/wirtschaftsplan/{data['cur'].id}/pdf", follow_redirects=False)
+    assert r.status_code in (200, 303)
 
 
 def test_budget_index_leitet_bei_einer_periode_weiter(client, db_session):
