@@ -19,7 +19,12 @@ from app.models import (
     PeriodOpeningBalance,
 )
 from app.models.enums import AllocationStrategy, CostCategory, PeriodStatus
-from app.services.billing import compute_period
+from app.services.billing import (
+    account_balance_before,
+    compute_period,
+    effective_reserve_opening,
+    reserve_account,
+)
 from app.services.periods import carry_forward_balances, previous_period, set_status
 from app.templating import templates
 from app.web import flash, parse_date, parse_decimal
@@ -100,6 +105,7 @@ def periods_edit(request: Request, period_id: int, db: Session = Depends(get_db)
             select(AllocationOverride).where(AllocationOverride.period_id == period_id)
         )
     }
+    acc = reserve_account(db)
     return templates.TemplateResponse(
         request,
         "periods/form.html",
@@ -110,6 +116,10 @@ def periods_edit(request: Request, period_id: int, db: Session = Depends(get_db)
             "zaehler_cost_types": _zaehler_cost_types(db),
             "overrides": overrides,
             "has_previous": previous_period(db, period) is not None,
+            "reserve_account_name": acc.name if acc else None,
+            "reserve_account_balance": (
+                account_balance_before(db, acc, period.start_date) if acc else None
+            ),
         },
     )
 
@@ -260,8 +270,14 @@ def period_overview(request: Request, period_id: int, db: Session = Depends(get_
             continue
         groups.setdefault(labels.get(ct.category, ct.category), []).append(ct)
 
+    _, reserve_source = effective_reserve_opening(db, period)
     return templates.TemplateResponse(
         request,
         "periods/overview.html",
-        {"period": period, "result": result, "cost_groups": groups},
+        {
+            "period": period,
+            "result": result,
+            "cost_groups": groups,
+            "reserve_source": reserve_source,
+        },
     )

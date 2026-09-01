@@ -142,6 +142,12 @@ Kostenart-UI zur Auswahl. Kein Eingriff in `engine.py` nötig (Topo-Sort über
 ORM (alle Buchungen im Zeitraum, **kontenübergreifend** – das Konto ist für die
 Berechnung irrelevant) und ruft `compute_billing`.
 
+`effective_reserve_opening(db, period) -> (Decimal, str)`: Rücklagen-Anfangssaldo
+der Periode. Vorrang hat `period.reserve_opening_balance`; ist er 0, wird der
+Stand des Rücklagenkontos zu Periodenbeginn genommen
+(`Account.opening_balance + Σ Buchungen vor `start_date``). Der zweite Rückgabewert
+ist eine Herkunftsbeschreibung für die Anzeige.
+
 ---
 
 ## 5. CSV-Import (`app/imports/` + `app/services/imports.py`)

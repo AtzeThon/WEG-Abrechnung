@@ -18,8 +18,15 @@
       {{ field('end_date', 'Zeitraum bis', (period.end_date | datum) if period else '', required=True, hint='TT.MM.JJJJ') }}
     </div>
     {{ field('reserve_opening_balance', 'Rücklagen-Anfangssaldo (gesamt)',
-             (period.reserve_opening_balance | dezimal) if period else '0,00',
-             hint='wird von der Engine anteilig nach MEA verteilt') }}
+             (period.reserve_opening_balance | dezimal) if period else '0,00') }}
+    <p class="text-xs text-slate-400 -mt-2">
+      Wird anteilig nach MEA verteilt.
+      {% if reserve_account_name %}
+      Bei <strong>0</strong> wird automatisch der Stand des Kontos
+      „{{ reserve_account_name }}" zu Periodenbeginn verwendet
+      ({{ reserve_account_balance | euro }}).
+      {% endif %}
+    </p>
   </div>
 
   {% if period %}

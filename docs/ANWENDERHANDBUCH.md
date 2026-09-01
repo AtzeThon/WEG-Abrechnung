@@ -43,6 +43,11 @@ Name, Typ (Girokonto / Rücklagenkonto), **Anfangssaldo** und Datum. Über
 **Kontoauszug** siehst du je Konto alle Buchungen mit laufendem Saldo – ideal
 zum Abgleich mit dem echten Bankauszug.
 
+Der **Anfangssaldo des Rücklagenkontos** fließt in die Abrechnung ein: Solange in
+einer Abrechnungsperiode kein eigener „Rücklagen-Anfangssaldo" erfasst ist
+(Wert 0), verwendet die Abrechnung den **Stand des Rücklagenkontos zu
+Periodenbeginn** (Anfangssaldo + Buchungen davor) und verteilt ihn nach MEA.
+
 ### 3.3 Kostenarten
 
 Für jede Kostenart:
@@ -144,6 +149,11 @@ Menü **Abrechnungen**.
 
 **+ Abrechnungsperiode** → Bezeichnung, Zeitraum *von/bis*, **Rücklagen-Anfangssaldo
 (gesamt)**. Nach dem Anlegen landest du in der Bearbeiten-Maske.
+
+> Lässt du „Rücklagen-Anfangssaldo (gesamt)" auf **0**, nimmt die Abrechnung
+> automatisch den Stand des Rücklagenkontos zu Periodenbeginn (siehe 3.2). Ein
+> von 0 verschiedener Wert hat Vorrang. Die Perioden-Übersicht zeigt unter der
+> Rücklagentabelle an, welche Quelle verwendet wurde.
 
 Dort erfasst du die **manuellen Anfangswerte**:
 
@@ -271,5 +281,6 @@ korrigieren → erneut **abschließen**. Bereits verschickte PDFs neu erzeugen.
 | „… liegt im abgeschlossenen Zeitraum" beim Buchen | Periode zuerst „Wieder öffnen (Entwurf)". |
 | Kostenanteil unerwartet 0 für eine Position | Umlageschlüssel steht auf *Vorauszahlung*, oder es fehlen die *Zähler*-Direkteingaben. |
 | Buchung erscheint nicht in der Abrechnung | Datum außerhalb des Periodenzeitraums, oder fachlicher Typ passt nicht (z. B. *Erstattung/Nachzahlung*). |
+| Rücklagenkonto / Anfangssaldo taucht nicht in der Abrechnung auf | Der Rücklagen-Anfangssaldo steht am **Rücklagenkonto** (Menü Konten). Ist der Perioden-Wert ≠ 0, hat dieser Vorrang – dann in der Perioden-Bearbeiten-Maske auf 0 setzen. |
 | PDF „nicht verfügbar" | Auf dem Server fehlen die WeasyPrint-Systempakete – siehe technische Doku / `deploy/DEPLOY.md`. |
 | CSV-Import findet Spalten nicht | Im Schritt „Spalten zuordnen" manuell zuordnen; wird als Profil gespeichert. |

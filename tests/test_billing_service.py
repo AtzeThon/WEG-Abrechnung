@@ -75,3 +75,33 @@ def test_periods_update_speichert_carryover_und_overrides(client, db_session):
         select(PeriodOpeningBalance).where(PeriodOpeningBalance.period_id == period.id)
     ).all()
     assert obs and all(ob.hausgeld_carryover == Decimal("111.11") for ob in obs)
+
+
+def test_ruecklagen_anfangssaldo_faellt_auf_das_konto_zurueck(db_session):
+    """Ist der Perioden-Wert 0, zählt der Stand des Rücklagenkontos."""
+    from datetime import date
+    from decimal import Decimal
+
+    from app.models import Account, BillingPeriod, Owner, PeriodOpeningBalance
+    from app.models.enums import AccountType
+
+    ruecklage = Account(name="Rücklage", type=AccountType.RUECKLAGE,
+                        opening_balance=Decimal("3499.72"), opening_balance_date=date(2025, 7, 31))
+    e1 = Owner(code="E1", mea=Decimal("600"))
+    e2 = Owner(code="E2", mea=Decimal("400"))
+    p = BillingPeriod(label="2026", start_date=date(2025, 8, 1), end_date=date(2026, 7, 31),
+                      reserve_opening_balance=Decimal("0"))
+    db_session.add_all([ruecklage, e1, e2, p])
+    db_session.commit()
+    for o in (e1, e2):
+        db_session.add(PeriodOpeningBalance(period_id=p.id, owner_id=o.id, hausgeld_carryover=Decimal("0")))
+    db_session.commit()
+
+    res = compute_period(db_session, p)
+    assert cent(res.reserve_opening_total) == Decimal("3499.72")
+    assert cent(res.owner_result("E1").reserve_opening) == Decimal("2099.83")  # 60 %
+
+    # Manueller Perioden-Wert hat weiterhin Vorrang
+    p.reserve_opening_balance = Decimal("1000")
+    db_session.commit()
+    assert cent(compute_period(db_session, p).reserve_opening_total) == Decimal("1000.00")
