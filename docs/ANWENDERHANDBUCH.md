@@ -198,6 +198,44 @@ Rücklagen-Block, Saldo gesamt). Dort **PDF herunterladen**.
 Muss doch etwas korrigiert werden: **Wieder öffnen (Entwurf)**, korrigieren,
 erneut abschließen.
 
+### 5.5 Wirtschaftsplan (Prognoserechnung)
+
+Der Menüpunkt **Wirtschaftsplan** zeigt für ein Wirtschaftsjahr eine monatliche
+Vorschau der Einnahmen und Ausgaben mit laufendem Kontostand. Er ändert **keine**
+Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen ist.
+
+**Aufbau der Tabelle**
+
+- Eine Zeile je Kalendermonat der Periode, dazu die Zeilen *Anfangssaldo* und
+  *Summe*.
+- Spalten: je Einnahme-Kostenart (Typ *Hausgeld*, *Sonderumlage*) ein Feld,
+  dann **Einnahmen**, je Ausgabe-Kostenart (Typ *Betriebskosten*, *Investition*,
+  *Erstattung/Nachzahlung*) ein Feld, dann **Ausgaben gesamt**, **Differenz**
+  (Einnahmen − Ausgaben) und **Saldo** (Vormonatssaldo + Differenz).
+- Neue Kostenarten erscheinen automatisch als zusätzliche Spalte.
+
+**Woher die Werte kommen** – je Zelle in dieser Reihenfolge:
+
+1. **manuell** (blau) – ein von dir eingetragener und gespeicherter Wert.
+2. **Ist** (grün) – es liegen für diese Kostenart in diesem Monat bereits
+   Buchungen der laufenden Periode vor; angezeigt wird deren Summe.
+3. **Prognose** (grau) – sonst der Betrag derselben Kostenart im gleichen
+   Monat der **vorherigen Abrechnungsperiode**. Gibt es keine Vorperiode,
+   bleibt das Feld leer.
+
+Der **Anfangssaldo** ist der Stand der **Girokonten** zu Periodenbeginn
+(Kontostand aus allen Buchungen vor dem Startdatum). Das Rücklagenkonto zählt
+hier nicht mit.
+
+**Bearbeiten**
+
+- Feld überschreiben und **Speichern**. Gespeichert werden nur Felder, die vom
+  automatischen Wert abweichen; setzt du ein Feld wieder auf den Ist-/Prognose-
+  Wert (oder leerst es), wird die Überschreibung entfernt.
+- **Auf Ist/Prognose zurücksetzen** verwirft alle Überschreibungen der Periode.
+- **PDF** erzeugt die Tabelle als PDF (auf dem Raspberry Pi; ohne WeasyPrint
+  erscheint stattdessen ein Hinweis).
+
 ---
 
 ## 6. Spezialfälle / How-To

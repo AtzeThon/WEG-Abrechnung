@@ -44,7 +44,7 @@ app/
   models/            SQLAlchemy-Modelle (+ enums.py)
   allocation/        Berechnungs-Engine (rein): types, strategies, engine
   imports/           CSV-Parser (rein): types, parser
-  services/          ORM-Adapter: billing.py, imports.py, periods.py
+  services/          ORM-Adapter: billing.py, imports.py, periods.py, transfers.py, budget.py
   routers/           HTTP-Endpunkte je Bereich
   templates/         Jinja-Templates (base.html + je Bereich)
   static/            app.css (Tailwind-Output), htmx.min.js
@@ -74,6 +74,7 @@ Strings (`Enum(..., native_enum=False)`).
 | `billing_periods` | Abrechnungsperioden | `label`, `start_date`, `end_date`, `status` (`draft`/`final`), `reserve_opening_balance`, `finalized_at?` |
 | `period_opening_balances` | Saldovortrag Hausgeld je Eigentümer/Periode | `period_id`, `owner_id`, `hausgeld_carryover` (unique je Paar) |
 | `allocation_overrides` | Zähler-Direkteingaben je Kostenart×Eigentümer×Periode | `period_id`, `cost_type_id`, `owner_id`, `amount` |
+| `budget_entries` | Wirtschaftsplan: manuell überschriebene Zelle | `period_id`, `month_index` (0 = erster Monat), `cost_type_id`, `amount` (unique je Tripel) |
 | `import_profiles` | gemerkte CSV-Struktur | `signature` (unique, Hash der Kopfzeile), `delimiter`, `encoding`, `date_format`, `header_row`, `amount_mode`, `mapping` (JSON) |
 | `import_batches` | hochgeladener Kontoauszug | `account_id`, `filename`, `raw_content` (BLOB), `profile_id?`, `status` (`entwurf`/`importiert`/`verworfen`) |
 | `import_rows` | geparste CSV-Zeile + Zuordnung | `batch_id`, `line_no`, `booking_date?`, `payee`, `purpose`, `amount?`, `raw` (JSON), `parse_error`, `is_duplicate`, `include`, `cost_type_id?`, `owner_id?` |
@@ -199,6 +200,37 @@ legt zwei Buchungen an (Rücklagenkonto-Bein Typ `ruecklage`, anderes Bein Typ
 
 ---
 
+## 6a. Wirtschaftsplan (`app/services/budget.py`, `routers/budget.py`)
+
+Reiner Aufbau eines Monats-Rasters je Periode; ändert keine Buchungen.
+
+- `month_windows(period)` – Kalendermonate von `start_date` bis `end_date`,
+  Rand­monate auf die Periodengrenzen geklammert, Label über Babel (`"LLLL y"`).
+- `build_grid(db, period) -> BudgetGrid` – Dataclasses `BudgetCell` /
+  `BudgetMonth` / `BudgetGrid` (keine ORM-Objekte im Template).
+  - Spalten: aktive Kostenarten, `kind ∈ {hausgeld, sonderumlage}` als Einnahme,
+    `kind ∈ {betriebskosten, investition, erstattung}` als Ausgabe
+    (`ruecklage`/`umbuchung` bleiben außen vor), sortiert nach `sort_order, name`.
+  - Zellwert `effective = manual ?? ist ?? vorschlag ?? 0`; `source` ∈
+    `manuell | ist | prognose | leer`. `ist` = Summe der Buchungen dieser
+    Kostenart im Monat (Ausgaben als positiver Betrag), `vorschlag` = dieselbe
+    Summe im gleichen Monatsindex von `previous_period(db, period)`.
+  - **Anfangssaldo** = Σ `account_balance_before(db, konto, start_date)` über
+    alle Konten mit `type == GIRO`. Laufender Saldo = Vormonatssaldo + Differenz.
+- `save_overrides(db, period, {(month_index, cost_type_id): Decimal|None})` –
+  Upsert nur bei Abweichung vom Default (`ist ?? vorschlag ?? 0`); leerer/gleicher
+  Wert löscht einen vorhandenen `BudgetEntry`.
+- `reset(db, period)` – löscht alle `BudgetEntry` der Periode.
+
+Router `prefix="/wirtschaftsplan"`: `budget_index` (Perioden-Auswahl, Redirect
+bei genau einer), `budget_view` (Grid als `<form>`), `budget_save`,
+`budget_reset`, `budget_pdf` (gleiche Vorlage, `pdf=1`; 303-Fallback ohne
+WeasyPrint). Registrierung in `app/main.py::_register_routers`. Jinja-Filter
+`betrag` (`app/locale.py`) für die Eingabefelder: immer zwei Nachkommastellen,
+kein Tausendertrenner.
+
+---
+
 ## 7. Konfiguration
 
 Umgebungsvariablen, Prefix `WEG_` (optional `.env` im Arbeitsverzeichnis).
@@ -224,7 +256,8 @@ CLI (`python -m app.cli`): `initdb`, `create-admin <name> [--password …]`.
 - `alembic upgrade head` / `alembic downgrade -1`.
 - `migrations/env.py` bezieht Engine und Metadaten aus der App
   (`WEG_DATABASE_PATH` gilt also auch für Alembic).
-- Bisherige Revisionen: `f5b2ccfd55a5` (Initialschema), `50dc58878cdf` (CSV-Import).
+- Bisherige Revisionen: `f5b2ccfd55a5` (Initialschema), `50dc58878cdf` (CSV-Import),
+  `0b2add809501` (Wirtschaftsplan: `budget_entries`).
 
 ---
 
@@ -277,7 +310,7 @@ Druck-CSS in `app/pdf.py::_PRINT_CSS`.
 ## 10. Tests
 
 ```
-.venv/bin/pytest            # ~100 Tests, < 3 s
+.venv/bin/pytest            # ~115 Tests, < 3 s
 .venv/bin/ruff check .
 ```
 
@@ -290,6 +323,8 @@ Druck-CSS in `app/pdf.py::_PRINT_CSS`.
 | `test_csv_parser.py` | `sniff` / `detect_mapping` / `parse_rows` gegen Fixtures (`tests/fixtures/bank_csv/`) |
 | `test_imports_flow.py` | Upload → Mapping → Prüfen → Buchen; Duplikat-Zweitimport; Historien-Vorschlag; Kategorie-/Eigentümer-Spalte |
 | `test_period_workflow.py` | Abschluss-Sperre; Salden aus Vorperiode |
+| `test_budget.py` | Wirtschaftsplan: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Saldo/Summen, Speichern/Zurücksetzen (Service + Routen) |
+| `test_transfer.py` | Umbuchung zwischen Konten (zwei Beine, Auto-Kostenarten) |
 | `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF" |
 | `test_transactions.py` / `test_crud.py` / `test_smoke.py` | CRUD, Filter (auch leere Query-Parameter), Auth |
 
@@ -309,6 +344,8 @@ Druck-CSS in `app/pdf.py::_PRINT_CSS`.
 - **Eigentümer-Login** mit Zugriff nur auf die eigene Abrechnung: nicht umgesetzt
   (`User`-Modell vorhanden, keine Owner-Verknüpfung).
 - **Mehrjahresvergleich / Diagramme**: nicht umgesetzt.
+- **Wirtschaftsplan**: Prognose nur aus der unmittelbaren Vorperiode (kein
+  Mittelwert mehrerer Jahre, keine Indexierung/Steigerungssätze).
 - **Plausibilitätswarnungen** in der Perioden-Übersicht (z. B. „Investitions-
   Kostenart mit Einzahlungen") wären hilfreich, fehlen noch.
 - Der lazy Router von FastAPI ≥ 0.115 liefert `app.routes` als `_IncludedRouter`-
