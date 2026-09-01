@@ -1,5 +1,7 @@
 {# Inhalt einer Einzelabrechnung. Erwartet: owner, cost_groups, result, period, year, pdf #}
 {% macro money(v) %}<span class="{{ 'text-red-600' if v < 0 }}">{{ v | euro }}</span>{% endmacro %}
+{% set _schluessel = {'mea': 'MEA', 'zaehler': 'Zähler', 'vorauszahlung': 'Vorauszahlung',
+                      'proportional': 'proportional'} %}
 
 <div class="flex flex-wrap items-start justify-between gap-3 mb-6">
   <div>
@@ -39,9 +41,9 @@
     <tr>
       <td class="td">{{ ct.name }}</td>
       <td class="td text-slate-500">{{ ct.supplier }}</td>
-      <td class="td text-right">{{ ct.weg_total | euro }}</td>
-      <td class="td text-xs text-slate-500">{{ ct.strategy_label }}</td>
-      <td class="td text-right">{{ ct.share(owner.code) | euro }}</td>
+      <td class="td text-right whitespace-nowrap">{{ ct.weg_total | euro }}</td>
+      <td class="td text-slate-500 whitespace-nowrap">{{ _schluessel.get(ct.strategy, ct.strategy_label) }}</td>
+      <td class="td text-right whitespace-nowrap">{{ ct.share(owner.code) | euro }}</td>
     </tr>
     {% endfor %}
     {% endfor %}
