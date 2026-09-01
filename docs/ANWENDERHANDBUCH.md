@@ -208,10 +208,11 @@ Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen i
 
 - Eine Zeile je Kalendermonat der Periode, dazu die Zeilen *Anfangssaldo* und
   *Summe*.
-- Spalten: je Einnahme-Kostenart (Typ *Hausgeld*, *Sonderumlage*) ein Feld,
-  dann **Einnahmen**, je Ausgabe-Kostenart (Typ *Betriebskosten*, *Investition*,
-  *Erstattung/Nachzahlung*) ein Feld, dann **Ausgaben gesamt**, **Differenz**
-  (Einnahmen − Ausgaben) und **Saldo** (Vormonatssaldo + Differenz).
+- Spalten von links nach rechts: **Monat**, **Saldo** (Vormonatssaldo +
+  Differenz), **Einnahmen**, **Ausgaben gesamt**, **Differenz** (Einnahmen −
+  Ausgaben), danach je Einnahme-Kostenart (Typ *Hausgeld*, *Sonderumlage*) und
+  je Ausgabe-Kostenart (Typ *Betriebskosten*, *Investition*,
+  *Erstattung/Nachzahlung*) ein Eingabefeld.
 - Neue Kostenarten erscheinen automatisch als zusätzliche Spalte.
 
 **Woher die Werte kommen** – je Zelle in dieser Reihenfolge:

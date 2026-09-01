@@ -1,6 +1,7 @@
-{#  Wirtschaftsplan-Raster: Zeilen = Monate, Spalten = Kostenarten + Summen.  #}
+{#  Wirtschaftsplan-Raster: Zeilen = Monate.
+    Spalten: Monat · Saldo · Einnahmen · Ausgaben gesamt · Differenz · je Kostenart.  #}
 {% set src_bg = {'ist': 'bg-green-50', 'prognose': 'bg-slate-50', 'manuell': 'bg-blue-50', 'leer': ''} %}
-{#  ncols = alle Datenspalten rechts von „Monat": je Kostenart + Einnahmen + Ausgaben + Differenz + Saldo  #}
+{#  ncols = alle Datenspalten rechts von „Monat": Saldo + Einnahmen + Ausgaben + Differenz + je Kostenart  #}
 {% set ncols = grid.income_types|length + grid.expense_types|length + 4 %}
 {% set colhead = 'th !px-1 text-right align-bottom whitespace-normal break-words leading-tight text-[11px] font-medium' %}
 {% set numcell = 'td !px-1 text-right text-xs whitespace-nowrap' %}
@@ -29,41 +30,41 @@
     <thead>
       <tr class="align-bottom">
         <th class="th sticky left-0 bg-white">Monat</th>
-        {% for ct in grid.income_types %}<th class="{{ colhead }}">{{ ct.name }}</th>{% endfor %}
+        <th class="{{ colhead }} bg-slate-50">Saldo</th>
         <th class="{{ colhead }} bg-slate-50">Einnahmen</th>
-        {% for ct in grid.expense_types %}<th class="{{ colhead }}">{{ ct.name }}</th>{% endfor %}
         <th class="{{ colhead }} bg-slate-50">Ausgaben gesamt</th>
         <th class="{{ colhead }} bg-slate-50">Differenz</th>
-        <th class="{{ colhead }} bg-slate-50">Saldo</th>
+        {% for ct in grid.income_types %}<th class="{{ colhead }}">{{ ct.name }}</th>{% endfor %}
+        {% for ct in grid.expense_types %}<th class="{{ colhead }}">{{ ct.name }}</th>{% endfor %}
       </tr>
     </thead>
     <tbody>
       <tr>
         <td class="td font-medium sticky left-0 bg-white whitespace-nowrap">Anfangssaldo</td>
+        <td class="{{ numcell }} bg-slate-50 font-medium">{{ grid.anfangssaldo | geld }}</td>
         <td class="td" colspan="{{ ncols - 1 }}"></td>
-        <td class="{{ numcell }} font-medium">{{ grid.anfangssaldo | geld }}</td>
       </tr>
       {% for m in grid.months %}
       <tr>
         <td class="td font-medium sticky left-0 bg-white whitespace-nowrap">{{ m.label }}</td>
-        {% for ct in grid.income_types %}{{ cell(m, ct) }}{% endfor %}
+        <td class="{{ numcell }} bg-slate-50 font-medium {{ 'text-red-600' if m.saldo < 0 }}">{{ m.saldo | geld }}</td>
         <td class="{{ numcell }} bg-slate-50">{{ m.einnahmen | geld }}</td>
-        {% for ct in grid.expense_types %}{{ cell(m, ct) }}{% endfor %}
         <td class="{{ numcell }} bg-slate-50">{{ m.ausgaben | geld }}</td>
         <td class="{{ numcell }} bg-slate-50 {{ 'text-red-600' if m.differenz < 0 }}">{{ m.differenz | geld }}</td>
-        <td class="{{ numcell }} bg-slate-50 font-medium {{ 'text-red-600' if m.saldo < 0 }}">{{ m.saldo | geld }}</td>
+        {% for ct in grid.income_types %}{{ cell(m, ct) }}{% endfor %}
+        {% for ct in grid.expense_types %}{{ cell(m, ct) }}{% endfor %}
       </tr>
       {% endfor %}
     </tbody>
     <tfoot>
       <tr class="font-semibold border-t-2 border-slate-300">
         <td class="td sticky left-0 bg-white whitespace-nowrap">Summe</td>
-        {% for ct in grid.income_types %}<td class="{{ numcell }}">{{ grid.totals[ct.id] | geld }}</td>{% endfor %}
+        <td class="{{ numcell }} bg-slate-50">{{ grid.endsaldo | geld }}</td>
         <td class="{{ numcell }} bg-slate-50">{{ grid.total_einnahmen | geld }}</td>
-        {% for ct in grid.expense_types %}<td class="{{ numcell }}">{{ grid.totals[ct.id] | geld }}</td>{% endfor %}
         <td class="{{ numcell }} bg-slate-50">{{ grid.total_ausgaben | geld }}</td>
         <td class="{{ numcell }} bg-slate-50 {{ 'text-red-600' if grid.total_differenz < 0 }}">{{ grid.total_differenz | geld }}</td>
-        <td class="{{ numcell }} bg-slate-50">{{ grid.endsaldo | geld }}</td>
+        {% for ct in grid.income_types %}<td class="{{ numcell }}">{{ grid.totals[ct.id] | geld }}</td>{% endfor %}
+        {% for ct in grid.expense_types %}<td class="{{ numcell }}">{{ grid.totals[ct.id] | geld }}</td>{% endfor %}
       </tr>
     </tfoot>
   </table>
