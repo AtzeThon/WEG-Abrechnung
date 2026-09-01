@@ -225,9 +225,11 @@ Reiner Aufbau eines Monats-Rasters je Periode; ändert keine Buchungen.
 Router `prefix="/wirtschaftsplan"`: `budget_index` (Perioden-Auswahl, Redirect
 bei genau einer), `budget_view` (Grid als `<form>`), `budget_save`,
 `budget_reset`, `budget_pdf` (gleiche Vorlage, `pdf=1`; 303-Fallback ohne
-WeasyPrint). Registrierung in `app/main.py::_register_routers`. Jinja-Filter
-`betrag` (`app/locale.py`) für die Eingabefelder: immer zwei Nachkommastellen,
-kein Tausendertrenner.
+WeasyPrint). Registrierung in `app/main.py::_register_routers`. Das Raster ist
+`table-fixed` mit einheitlich schmalen Spalten; die Überschriften brechen um.
+Jinja-Filter in `app/locale.py`: `betrag` für die Eingabefelder (zwei
+Nachkommastellen, kein Tausendertrenner), `geld` für die Anzeigezahlen im
+Raster (Tausendertrenner, zwei Nachkommastellen, kein €-Symbol).
 
 ---
 
