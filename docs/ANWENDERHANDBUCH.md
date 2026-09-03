@@ -237,9 +237,13 @@ Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen i
 
 **Abgeschlossene Monate:** Ist ein Monat vorbei (Monatsende vor dem heutigen
 Tag – erkennbar am Kürzel „Ist" hinter dem Monatsnamen), zeigt der Plan für
-diesen Monat die **tatsächlich gebuchten Ist-Werte**, nicht mehr den vorab
-erfassten Planwert oder die Prognose. Die Felder sind dort nicht mehr editierbar
-– der Wirtschaftsplan wird so Monat für Monat automatisch zur Ist-Übersicht für
+diesen Monat **ausschließlich die tatsächlich gebuchten Ist-Werte** – keine
+vorab erfassten Planwerte und keine aus dem Vorjahr übernommenen Werte; ist
+nichts gebucht, steht dort 0. Die Felder sind nicht mehr editierbar. Wird
+**später** eine Buchung mit einem **Buchungsdatum in einem abgeschlossenen
+Monat** erfasst (z. B. eine Rückbuchung oder eine erst im September eingehende
+August-Rechnung), erscheint der Betrag weiterhin in der Spalte dieses Monats.
+So wird der Wirtschaftsplan Monat für Monat automatisch zur Ist-Übersicht für
 die Vergangenheit und bleibt Planung nur für die noch offenen Monate.
 
 Der **Anfangssaldo** ist der Stand der **Girokonten** zu Periodenbeginn

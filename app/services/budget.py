@@ -129,23 +129,16 @@ class BudgetCell:
     @property
     def effective(self) -> Decimal:
         if self.is_past:
-            # Abgeschlossener Monat: der Ist-Wert gilt, keine Prognose mehr; ein
-            # bewusst gesetzter Korrekturwert bleibt greifbar, wenn nichts gebucht ist.
-            if self.ist is not None:
-                return self.ist
-            if self.manual is not None:
-                return self.manual
-            return ZERO
+            # Abgeschlossener Monat: ausschließlich der gebuchte Ist-Wert – keine
+            # Planwerte, keine übernommenen Vorjahreswerte. Nachträgliche Buchungen
+            # mit einem Datum in diesem Monat werden über ``ist`` mitgezählt.
+            return self.ist if self.ist is not None else ZERO
         return self.manual if self.manual is not None else self.default_value
 
     @property
     def source(self) -> str:
         if self.is_past:
-            if self.ist is not None:
-                return "ist"
-            if self.manual is not None:
-                return "manuell"
-            return "leer"
+            return "ist" if self.ist is not None else "leer"
         if self.manual is not None:
             return "manuell"
         if self.ist is not None:

@@ -219,10 +219,12 @@ Reiner Aufbau eines Monats-Rasters je Periode; ändert keine Buchungen.
     Betrag), `vorschlag` = dieselbe Summe im gleichen Monatsindex von
     `previous_period(db, period)`.
   - **Abgeschlossener Monat** (`window.end < today`, `BudgetCell.is_past`):
-    `effective = ist ?? manual ?? 0` (keine Prognose), im Template als reiner
-    Text statt Eingabefeld. `build_grid(..., today=None)` /
-    `save_overrides(..., today=None)` / `build_comparison(..., today=None)`
-    nehmen ein injizierbares Datum (Default `date.today()`).
+    `effective = ist ?? 0` – kein Plan-, kein Vorjahreswert; `source` ∈ `ist|leer`;
+    im Template reiner Text statt Eingabefeld. `ist` zählt über `booking_date`,
+    also auch nachträglich erfasste Buchungen mit Datum in diesem Monat.
+    `build_grid(..., today=None)` / `save_overrides(..., today=None)` /
+    `build_comparison(..., today=None)` nehmen ein injizierbares Datum
+    (Default `date.today()`).
   - **Anfangssaldo** = Σ `account_balance_before(db, konto, start_date)` über
     alle Konten mit `type == GIRO`. Laufender Saldo = Vormonatssaldo + Differenz.
 - `save_overrides(db, period, {(month_index, cost_type_id): Decimal|None})` –

@@ -171,21 +171,40 @@ def test_abgeschlossener_monat_zeigt_ist_statt_plan(db_session, data):
     assert grid0.months[0].cells[gas.id].effective == Decimal("999.00")
 
 
-def test_abgeschlossener_monat_ohne_ist(db_session, data):
-    cur, garten = data["cur"], data["garten"]
-    # Planwert für Oktober-Gartenpflege, aber es wird nie gebucht.
+def test_abgeschlossener_monat_nur_ist_kein_plan(db_session, data):
+    cur, garten, gas = data["cur"], data["garten"], data["gas"]
+    # Planwert für Oktober-Gartenpflege erfasst; es wird nie gebucht.
     budget.save_overrides(db_session, cur, {(2, garten.id): Decimal("120.00")}, today=PLAN_TODAY)
     db_session.commit()
     grid = budget.build_grid(db_session, cur, today=date(2025, 12, 1))
-    cell = grid.months[2].cells[garten.id]
-    # Kein Ist -> der bewusste Korrekturwert bleibt sichtbar (statt Vorjahres-Prognose).
-    assert cell.is_past is True
-    assert cell.source == "manuell"
-    assert cell.effective == Decimal("120.00")
-    # Ohne Planwert wäre ein abgeschlossener Monat ohne Ist einfach 0 (nicht Prognose).
-    other = grid.months[2].cells[data["gas"].id]
-    assert other.effective == Decimal("0.00")
-    assert other.source == "leer"
+
+    # Abgeschlossener Monat ohne Buchung -> 0, weder Plan- noch Vorjahreswert.
+    garten_cell = grid.months[2].cells[garten.id]
+    assert garten_cell.is_past is True
+    assert garten_cell.source == "leer"
+    assert garten_cell.effective == Decimal("0.00")
+
+    # gas Monat 2 hätte einen Vorjahres-Vorschlag – im abgeschlossenen Monat trotzdem 0.
+    gas_cell = grid.months[2].cells[gas.id]
+    assert gas_cell.effective == Decimal("0.00")
+    assert gas_cell.source == "leer"
+
+
+def test_abgeschlossener_monat_zaehlt_nachtraegliche_buchung(db_session, data):
+    cur, gas = data["cur"], data["gas"]
+    # Buchung mit Buchungsdatum im (bereits abgeschlossenen) August, erst im
+    # September erfasst -> muss im August-Feld des Wirtschaftsplans auftauchen.
+    db_session.add(
+        Transaction(account_id=data["giro"].id, booking_date=date(2025, 8, 30), payee="Rechnung spät",
+                    cost_type_id=gas.id, amount=Decimal("-50.00"))
+    )
+    db_session.commit()
+    grid = budget.build_grid(db_session, cur, today=date(2025, 9, 20))
+    aug = grid.months[0].cells[gas.id]
+    assert aug.is_past is True
+    # August-Ist = 800 (20.08.) + 50 (30.08.) = 850
+    assert aug.effective == Decimal("850.00")
+    assert aug.source == "ist"
 
 
 def test_save_overrides_upsert_und_delete(db_session, data):
