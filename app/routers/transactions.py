@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Form, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -46,19 +47,10 @@ def _lookups(db: Session) -> dict:
     }
 
 
-@router.get("", response_class=HTMLResponse, name="transactions_list")
-def transactions_list(
-    request: Request,
-    db: Session = Depends(get_db),
-    account_id: str | None = None,
-    owner_id: str | None = None,
-    cost_type_id: str | None = None,
-    date_from: str | None = None,
-    date_to: str | None = None,
-    q: str | None = None,
-    sort: str = "datum",
-    dir: str = "desc",
-):
+def _filtered_rows(
+    db: Session, *, account_id, owner_id, cost_type_id, date_from, date_to, q, sort, dir,
+) -> dict:
+    """Gefilterte/sortierte Buchungen + Kontext (für Liste, htmx-Teilrender und PDF)."""
     account_id = _int_or_none(account_id)
     owner_id = _int_or_none(owner_id)
     cost_type_id = _int_or_none(cost_type_id)
@@ -87,10 +79,9 @@ def transactions_list(
     stmt = stmt.order_by(col.desc() if dir == "desc" else col.asc(), Transaction.id.desc())
 
     rows = list(db.scalars(stmt))
-    total = sum((t.amount for t in rows), Decimal("0"))
-    context = {
+    return {
         "rows": rows,
-        "total": total,
+        "total": sum((t.amount for t in rows), Decimal("0")),
         "filters": {
             "account_id": account_id, "owner_id": owner_id, "cost_type_id": cost_type_id,
             "date_from": date_from or "", "date_to": date_to or "", "q": q or "",
@@ -98,8 +89,69 @@ def transactions_list(
         },
         **_lookups(db),
     }
+
+
+@router.get("", response_class=HTMLResponse, name="transactions_list")
+def transactions_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    account_id: str | None = None,
+    owner_id: str | None = None,
+    cost_type_id: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    q: str | None = None,
+    sort: str = "datum",
+    dir: str = "desc",
+):
+    context = _filtered_rows(
+        db, account_id=account_id, owner_id=owner_id, cost_type_id=cost_type_id,
+        date_from=date_from, date_to=date_to, q=q, sort=sort, dir=dir,
+    )
     template = "transactions/_table.html" if request.headers.get("HX-Request") else "transactions/list.html"
     return templates.TemplateResponse(request, template, context)
+
+
+@router.get("/pdf", name="transactions_pdf")
+def transactions_pdf(
+    request: Request,
+    db: Session = Depends(get_db),
+    account_id: str | None = None,
+    owner_id: str | None = None,
+    cost_type_id: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    q: str | None = None,
+    sort: str = "datum",
+    dir: str = "desc",
+):
+    context = _filtered_rows(
+        db, account_id=account_id, owner_id=owner_id, cost_type_id=cost_type_id,
+        date_from=date_from, date_to=date_to, q=q, sort=sort, dir=dir,
+    )
+    f = context["filters"]
+    by_id = {
+        "account": next((a.name for a in context["accounts"] if a.id == f["account_id"]), None),
+        "cost_type": next((c.name for c in context["cost_types"] if c.id == f["cost_type_id"]), None),
+        "owner": next((o.code for o in context["owners"] if o.id == f["owner_id"]), None),
+    }
+    html = templates.get_template("transactions/pdf.html").render(
+        request=request, **context, labels=by_id, erstellt=date.today()
+    )
+    try:
+        from app.pdf import render_pdf
+
+        pdf_bytes = render_pdf(html, base_url=str(request.base_url))
+    except RuntimeError as exc:
+        flash(request, str(exc), "error")
+        return RedirectResponse(
+            request.url_for("transactions_list"), status_code=status.HTTP_303_SEE_OTHER
+        )
+    return Response(
+        pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="Buchungen.pdf"'},
+    )
 
 
 @router.get("/neu", response_class=HTMLResponse, name="transactions_new")

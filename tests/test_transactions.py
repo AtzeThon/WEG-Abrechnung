@@ -77,6 +77,20 @@ def test_account_ledger_running_balance(client, db_session):
     assert "50,00" in r.text
 
 
+def test_transactions_pdf_route(client, db_session):
+    giro, ct, _hg, _e1 = _base_data(db_session)
+    db_session.add(
+        Transaction(account_id=giro.id, booking_date=date(2026, 1, 1), payee="A",
+                    cost_type_id=ct.id, amount=Decimal("-30"))
+    )
+    db_session.commit()
+    # Ohne WeasyPrint (Windows) -> 303-Fallback; mit -> 200 application/pdf. Kein 500.
+    r = client.get(f"/buchungen/pdf?account_id={giro.id}", follow_redirects=False)
+    assert r.status_code in (200, 303)
+    if r.status_code == 200:
+        assert r.headers["content-type"] == "application/pdf"
+
+
 def test_inline_kostenart_anlegen(client, db_session):
     r = client.post("/kostenarten/inline-neu", data={
         "name": "Neue Art", "category": "sonstiges", "kind": "betriebskosten",

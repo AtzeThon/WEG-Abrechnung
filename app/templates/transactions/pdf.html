@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Buchungen · {{ APP_NAME }}{% endblock %}
+{% block content %}
+{% set f = filters %}
+
+<h1 class="text-xl font-semibold">Buchungen</h1>
+<p class="text-sm text-slate-600 mb-1">
+  {{ rows | length }} Buchung(en){% if f.date_from or f.date_to %} ·
+    Zeitraum {{ f.date_from or '…' }} – {{ f.date_to or '…' }}{% endif %}
+  {%- if labels.account %} · Konto: {{ labels.account }}{% endif %}
+  {%- if labels.cost_type %} · Kostenart: {{ labels.cost_type }}{% endif %}
+  {%- if labels.owner %} · Eigentümer: {{ labels.owner }}{% endif %}
+  {%- if f.q %} · Suche: „{{ f.q }}"{% endif %}
+</p>
+<p class="text-xs text-slate-400 mb-4">Erstellt am {{ erstellt | datum }}</p>
+
+<table class="w-full text-sm">
+  <thead>
+    <tr>
+      <th class="th">Datum</th>
+      <th class="th">Zahlungspartner</th>
+      <th class="th">Kostenart</th>
+      <th class="th">Konto</th>
+      <th class="th">Eig.</th>
+      <th class="th text-right">Betrag</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in rows %}
+    <tr>
+      <td class="td whitespace-nowrap">{{ t.booking_date | datum }}</td>
+      <td class="td">{{ t.payee }}{% if t.note %}<span class="block text-xs text-slate-400">{{ t.note }}</span>{% endif %}</td>
+      <td class="td">{{ t.cost_type.name }}</td>
+      <td class="td text-slate-500">{{ t.account.name }}</td>
+      <td class="td">{{ t.owner.code if t.owner else '' }}</td>
+      <td class="td text-right whitespace-nowrap {{ 'text-red-600' if t.amount < 0 }}">{{ t.amount | euro }}</td>
+    </tr>
+    {% else %}
+    <tr><td class="td text-slate-400" colspan="6">Keine Buchungen für diese Filter.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="font-semibold border-t-2 border-slate-300">
+      <td class="td" colspan="5">Summe</td>
+      <td class="td text-right {{ 'text-red-600' if total < 0 }}">{{ total | euro }}</td>
+    </tr>
+  </tfoot>
+</table>
+{% endblock %}
