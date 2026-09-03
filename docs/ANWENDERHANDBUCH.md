@@ -219,6 +219,8 @@ Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen i
   *Erstattung/Nachzahlung*) und je Ausgabe-Kostenart (Typ *Betriebskosten*,
   *Investition*) ein Eingabefeld.
 - Neue Kostenarten erscheinen automatisch als zusätzliche Spalte.
+- Über den Spaltenköpfen fassen die Gruppen­überschriften **Gesamt**,
+  **Einnahmen** und **Ausgaben** die jeweiligen Spalten zusammen.
 - **Erstattung/Nachzahlung** zählt zu den *Einnahmen*: eine Nachzahlung des
   Eigentümers ist ein Geldzufluss (positiv), eine Erstattung an ihn ein Abfluss
   (negativ). Auf die *Differenz* und den *Saldo* wirkt sich das nicht aus – nur
