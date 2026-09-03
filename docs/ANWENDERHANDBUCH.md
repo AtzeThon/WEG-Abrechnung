@@ -235,6 +235,13 @@ Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen i
    Monat der **vorherigen Abrechnungsperiode**. Gibt es keine Vorperiode,
    bleibt das Feld leer.
 
+**Abgeschlossene Monate:** Ist ein Monat vorbei (Monatsende vor dem heutigen
+Tag – erkennbar am Kürzel „Ist" hinter dem Monatsnamen), zeigt der Plan für
+diesen Monat die **tatsächlich gebuchten Ist-Werte**, nicht mehr den vorab
+erfassten Planwert oder die Prognose. Die Felder sind dort nicht mehr editierbar
+– der Wirtschaftsplan wird so Monat für Monat automatisch zur Ist-Übersicht für
+die Vergangenheit und bleibt Planung nur für die noch offenen Monate.
+
 Der **Anfangssaldo** ist der Stand der **Girokonten** zu Periodenbeginn
 (Kontostand aus allen Buchungen vor dem Startdatum). Das Rücklagenkonto zählt
 hier nicht mit.

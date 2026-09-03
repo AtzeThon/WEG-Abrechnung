@@ -9,8 +9,10 @@
 {% macro cell(m, ct) %}
   {% set c = m.cells[ct.id] %}
   <td class="td !px-1 py-1 text-right {{ src_bg[c.source] }}">
-    {% if pdf %}
-      <span class="text-xs">{{ '' if c.source == 'leer' else c.effective | geld }}</span>
+    {% if pdf or c.is_past %}
+      {# Abgeschlossener Monat: nur anzeigen (Ist-Wert), nicht editierbar. #}
+      <span class="text-xs {{ 'text-slate-500' if c.is_past and not pdf }}"
+            {% if c.is_past and not pdf %}title="abgeschlossener Monat – Ist-Wert"{% endif %}>{{ '' if c.source == 'leer' else c.effective | geld }}</span>
     {% else %}
       <input type="text" inputmode="decimal" name="v_{{ m.index }}_{{ ct.id }}"
              value="{{ '' if c.source == 'leer' else c.effective | betrag }}"
@@ -53,7 +55,8 @@
       </tr>
       {% for m in grid.months %}
       <tr>
-        <td class="td font-medium sticky left-0 bg-white whitespace-nowrap">{{ m.label }}</td>
+        <td class="td font-medium sticky left-0 bg-white whitespace-nowrap">{{ m.label }}{% if m.is_past %}
+          <span class="ml-1 align-middle text-[10px] font-normal text-slate-400" title="abgeschlossener Monat – Ist-Werte">Ist</span>{% endif %}</td>
         <td class="{{ numcell }} bg-slate-50 font-medium {{ 'text-red-600' if m.saldo < 0 }}">{{ m.saldo | geld }}</td>
         <td class="{{ numcell }} bg-slate-50">{{ m.einnahmen | geld }}</td>
         <td class="{{ numcell }} bg-slate-50">{{ m.ausgaben | geld }}</td>

@@ -113,9 +113,13 @@ class BudgetCell:
     manual: Decimal | None = None
     ist: Decimal | None = None
     vorschlag: Decimal | None = None
+    is_past: bool = False  # Monat abgeschlossen (Fenster-Ende vor heute)
 
     @property
     def default_value(self) -> Decimal:
+        """Wert, bei dem keine gespeicherte Überschreibung nötig ist."""
+        if self.is_past:
+            return self.ist if self.ist is not None else ZERO
         if self.ist is not None:
             return self.ist
         if self.vorschlag is not None:
@@ -124,10 +128,24 @@ class BudgetCell:
 
     @property
     def effective(self) -> Decimal:
+        if self.is_past:
+            # Abgeschlossener Monat: der Ist-Wert gilt, keine Prognose mehr; ein
+            # bewusst gesetzter Korrekturwert bleibt greifbar, wenn nichts gebucht ist.
+            if self.ist is not None:
+                return self.ist
+            if self.manual is not None:
+                return self.manual
+            return ZERO
         return self.manual if self.manual is not None else self.default_value
 
     @property
     def source(self) -> str:
+        if self.is_past:
+            if self.ist is not None:
+                return "ist"
+            if self.manual is not None:
+                return "manuell"
+            return "leer"
         if self.manual is not None:
             return "manuell"
         if self.ist is not None:
@@ -144,6 +162,7 @@ class BudgetMonth:
     start: date
     end: date
     cells: dict[int, BudgetCell]
+    is_past: bool = False
     einnahmen: Decimal = ZERO
     ausgaben: Decimal = ZERO
     differenz: Decimal = ZERO
@@ -180,7 +199,10 @@ def _giro_opening(db: Session, period: BillingPeriod) -> tuple[Decimal, str]:
     return total, f"Girokonto {names} zu Periodenbeginn"
 
 
-def build_grid(db: Session, period: BillingPeriod) -> BudgetGrid:
+def build_grid(
+    db: Session, period: BillingPeriod, *, today: date | None = None
+) -> BudgetGrid:
+    today = today or date.today()
     windows = month_windows(period)
 
     cost_types = list(
@@ -204,6 +226,7 @@ def build_grid(db: Session, period: BillingPeriod) -> BudgetGrid:
     totals: dict[int, Decimal] = {c.id: ZERO for c in col_types}
     running = anfangssaldo
     for w in windows:
+        past = w.end < today
         cells = {
             c.id: BudgetCell(
                 month_index=w.index,
@@ -211,6 +234,7 @@ def build_grid(db: Session, period: BillingPeriod) -> BudgetGrid:
                 manual=manual.get((w.index, c.id)),
                 ist=ist.get((c.id, w.index)),
                 vorschlag=vorschlag.get((c.id, w.index)),
+                is_past=past,
             )
             for c in col_types
         }
@@ -223,7 +247,8 @@ def build_grid(db: Session, period: BillingPeriod) -> BudgetGrid:
         months.append(
             BudgetMonth(
                 index=w.index, label=w.label, start=w.start, end=w.end, cells=cells,
-                einnahmen=einnahmen, ausgaben=ausgaben, differenz=differenz, saldo=running,
+                is_past=past, einnahmen=einnahmen, ausgaben=ausgaben,
+                differenz=differenz, saldo=running,
             )
         )
 
@@ -248,10 +273,11 @@ def build_grid(db: Session, period: BillingPeriod) -> BudgetGrid:
 # Speichern / Zurücksetzen
 # --------------------------------------------------------------------------- #
 def save_overrides(
-    db: Session, period: BillingPeriod, values: dict[tuple[int, int], Decimal | None]
+    db: Session, period: BillingPeriod, values: dict[tuple[int, int], Decimal | None],
+    *, today: date | None = None,
 ) -> int:
     """Nur Zellen speichern, die vom berechneten Default abweichen."""
-    grid = build_grid(db, period)
+    grid = build_grid(db, period, today=today)
     defaults = {
         (m.index, cid): cell.default_value
         for m in grid.months
@@ -334,13 +360,14 @@ def _union_cost_types(xs: list[CostType], ys: list[CostType]) -> list[CostType]:
 
 
 def build_comparison(
-    db: Session, period: BillingPeriod, base_period: BillingPeriod
+    db: Session, period: BillingPeriod, base_period: BillingPeriod,
+    *, today: date | None = None,
 ) -> CompareGrid:
     """Stellt die Wirtschaftsplan-Werte zweier Perioden je Monat und Kostenart
     gegenüber (Monatsindex ↔ Monatsindex). Angezeigt wird jeweils die Differenz
     ``Wirtschaftsjahr − Vergleichsjahr``."""
-    ga = build_grid(db, period)
-    gb = build_grid(db, base_period)
+    ga = build_grid(db, period, today=today)
+    gb = build_grid(db, base_period, today=today)
 
     income_types = _union_cost_types(ga.income_types, gb.income_types)
     expense_types = _union_cost_types(ga.expense_types, gb.expense_types)

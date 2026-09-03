@@ -213,11 +213,16 @@ Reiner Aufbau eines Monats-Rasters je Periode; ändert keine Buchungen.
     (`ruecklage`/`umbuchung` bleiben außen vor), sortiert nach `sort_order, name`.
     Erstattung/Nachzahlung zählt bewusst zu den Einnahmen (Zufluss positiv),
     nicht als negative Ausgabe – die Differenz bleibt dieselbe.
-  - Zellwert `effective = manual ?? ist ?? vorschlag ?? 0`; `source` ∈
-    `manuell | ist | prognose | leer`. `ist` = Summe der Buchungen dieser
-    Kostenart im Monat (Einnahmen wie gebucht, Ausgaben als positiver Betrag),
-    `vorschlag` = dieselbe Summe im gleichen Monatsindex von
+  - Zellwert offener Monat: `effective = manual ?? ist ?? vorschlag ?? 0`;
+    `source` ∈ `manuell | ist | prognose | leer`. `ist` = Summe der Buchungen
+    dieser Kostenart im Monat (Einnahmen wie gebucht, Ausgaben als positiver
+    Betrag), `vorschlag` = dieselbe Summe im gleichen Monatsindex von
     `previous_period(db, period)`.
+  - **Abgeschlossener Monat** (`window.end < today`, `BudgetCell.is_past`):
+    `effective = ist ?? manual ?? 0` (keine Prognose), im Template als reiner
+    Text statt Eingabefeld. `build_grid(..., today=None)` /
+    `save_overrides(..., today=None)` / `build_comparison(..., today=None)`
+    nehmen ein injizierbares Datum (Default `date.today()`).
   - **Anfangssaldo** = Σ `account_balance_before(db, konto, start_date)` über
     alle Konten mit `type == GIRO`. Laufender Saldo = Vormonatssaldo + Differenz.
 - `save_overrides(db, period, {(month_index, cost_type_id): Decimal|None})` –

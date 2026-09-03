@@ -12,6 +12,10 @@ from app.models import Account, BillingPeriod, BudgetEntry, CostType, Owner, Tra
 from app.models.enums import AccountType, CostKind, PeriodStatus
 from app.services import budget
 
+# „Heute" für die Grid-Tests: Periodenbeginn, damit noch kein Monat abgeschlossen
+# ist (abgeschlossene Monate zeigen Ist statt Plan – eigene Tests dafür).
+PLAN_TODAY = date(2025, 8, 1)
+
 
 @pytest.fixture
 def data(db_session):
@@ -82,7 +86,7 @@ def test_month_windows_labels(data):
 
 
 def test_anfangssaldo_nur_girokonto(db_session, data):
-    grid = budget.build_grid(db_session, data["cur"])
+    grid = budget.build_grid(db_session, data["cur"], today=PLAN_TODAY)
     # Girokonto: 4000 Anfangsbestand + alle Buchungen vor dem 01.08.2025
     #   -745 -745 (Gas) -86,67 (Garten) +529 +300 (Hausgeld) = 3252,33
     # Das Rücklagenkonto (9999) zählt NICHT mit.
@@ -90,7 +94,7 @@ def test_anfangssaldo_nur_girokonto(db_session, data):
 
 
 def test_ist_vor_vorschlag_pro_zelle(db_session, data):
-    grid = budget.build_grid(db_session, data["cur"])
+    grid = budget.build_grid(db_session, data["cur"], today=PLAN_TODAY)
     m0 = grid.months[0]
     gas_cell = m0.cells[data["gas"].id]
     assert gas_cell.source == "ist"
@@ -107,7 +111,7 @@ def test_ist_vor_vorschlag_pro_zelle(db_session, data):
 
 
 def test_laufender_saldo_und_summen(db_session, data):
-    grid = budget.build_grid(db_session, data["cur"])
+    grid = budget.build_grid(db_session, data["cur"], today=PLAN_TODAY)
     running = grid.anfangssaldo
     for m in grid.months:
         running += m.differenz
@@ -129,7 +133,7 @@ def test_erstattung_zaehlt_zu_den_einnahmen(db_session, data):
     )
     db_session.commit()
 
-    grid = budget.build_grid(db_session, cur)
+    grid = budget.build_grid(db_session, cur, today=PLAN_TODAY)
     assert erst in grid.income_types
     assert erst not in grid.expense_types
     cell = grid.months[0].cells[erst.id]
@@ -138,20 +142,66 @@ def test_erstattung_zaehlt_zu_den_einnahmen(db_session, data):
     assert grid.months[0].einnahmen >= Decimal("183.98")
 
 
+def test_abgeschlossener_monat_zeigt_ist_statt_plan(db_session, data):
+    cur, gas = data["cur"], data["gas"]
+    # Vorab (vor Jahresbeginn) einen Planwert für August und September erfassen.
+    budget.save_overrides(
+        db_session, cur, {(0, gas.id): Decimal("999.00"), (1, gas.id): Decimal("999.00")},
+        today=PLAN_TODAY,
+    )
+    db_session.commit()
+
+    # Wir sind im September: August (Index 0) ist abgeschlossen, September (1) läuft.
+    sept = date(2025, 9, 15)
+    grid = budget.build_grid(db_session, cur, today=sept)
+
+    aug = grid.months[0].cells[gas.id]
+    assert grid.months[0].is_past is True
+    assert aug.is_past is True
+    assert aug.source == "ist"
+    assert aug.effective == Decimal("800.00")  # Ist verdrängt den Planwert 999
+
+    sep = grid.months[1].cells[gas.id]
+    assert grid.months[1].is_past is False
+    assert sep.source == "manuell"
+    assert sep.effective == Decimal("999.00")  # laufender Monat -> Plan gilt weiter
+
+    # Am Jahresanfang gilt für August noch der Plan.
+    grid0 = budget.build_grid(db_session, cur, today=PLAN_TODAY)
+    assert grid0.months[0].cells[gas.id].effective == Decimal("999.00")
+
+
+def test_abgeschlossener_monat_ohne_ist(db_session, data):
+    cur, garten = data["cur"], data["garten"]
+    # Planwert für Oktober-Gartenpflege, aber es wird nie gebucht.
+    budget.save_overrides(db_session, cur, {(2, garten.id): Decimal("120.00")}, today=PLAN_TODAY)
+    db_session.commit()
+    grid = budget.build_grid(db_session, cur, today=date(2025, 12, 1))
+    cell = grid.months[2].cells[garten.id]
+    # Kein Ist -> der bewusste Korrekturwert bleibt sichtbar (statt Vorjahres-Prognose).
+    assert cell.is_past is True
+    assert cell.source == "manuell"
+    assert cell.effective == Decimal("120.00")
+    # Ohne Planwert wäre ein abgeschlossener Monat ohne Ist einfach 0 (nicht Prognose).
+    other = grid.months[2].cells[data["gas"].id]
+    assert other.effective == Decimal("0.00")
+    assert other.source == "leer"
+
+
 def test_save_overrides_upsert_und_delete(db_session, data):
     cur, gas = data["cur"], data["gas"]
     # Monat 1 (September, Index 1): manueller Gas-Wert 750 (weicht vom Vorschlag 745 ab)
-    budget.save_overrides(db_session, cur, {(1, gas.id): Decimal("750.00")})
+    budget.save_overrides(db_session, cur, {(1, gas.id): Decimal("750.00")}, today=PLAN_TODAY)
     db_session.commit()
     entry = db_session.scalar(select(BudgetEntry).where(BudgetEntry.period_id == cur.id))
     assert entry is not None and entry.amount == Decimal("750.00")
 
-    grid = budget.build_grid(db_session, cur)
+    grid = budget.build_grid(db_session, cur, today=PLAN_TODAY)
     assert grid.months[1].cells[gas.id].source == "manuell"
     assert grid.months[1].cells[gas.id].effective == Decimal("750.00")
 
     # Zurück auf den Default (Vorschlag 745) -> Entry wird gelöscht
-    budget.save_overrides(db_session, cur, {(1, gas.id): Decimal("745.00")})
+    budget.save_overrides(db_session, cur, {(1, gas.id): Decimal("745.00")}, today=PLAN_TODAY)
     db_session.commit()
     assert db_session.scalar(select(BudgetEntry).where(BudgetEntry.period_id == cur.id)) is None
 
@@ -159,13 +209,13 @@ def test_save_overrides_upsert_und_delete(db_session, data):
 def test_save_overrides_ist_zelle_ueberschreiben(db_session, data):
     cur, gas = data["cur"], data["gas"]
     # Monat 0 hat Ist 800; manuell auf 800 -> kein Entry (== Default)
-    budget.save_overrides(db_session, cur, {(0, gas.id): Decimal("800.00")})
+    budget.save_overrides(db_session, cur, {(0, gas.id): Decimal("800.00")}, today=PLAN_TODAY)
     db_session.commit()
     assert db_session.scalar(select(BudgetEntry).where(BudgetEntry.period_id == cur.id)) is None
     # manuell auf 900 -> Entry
-    budget.save_overrides(db_session, cur, {(0, gas.id): Decimal("900.00")})
+    budget.save_overrides(db_session, cur, {(0, gas.id): Decimal("900.00")}, today=PLAN_TODAY)
     db_session.commit()
-    grid = budget.build_grid(db_session, cur)
+    grid = budget.build_grid(db_session, cur, today=PLAN_TODAY)
     assert grid.months[0].cells[gas.id].source == "manuell"
     assert grid.months[0].cells[gas.id].effective == Decimal("900.00")
 
@@ -175,7 +225,7 @@ def test_reset_loescht_alle_entries(db_session, data):
     budget.save_overrides(db_session, cur, {
         (1, gas.id): Decimal("750.00"),
         (4, garten.id): Decimal("90.00"),
-    })
+    }, today=PLAN_TODAY)
     db_session.commit()
     assert db_session.scalars(select(BudgetEntry)).all()
     budget.reset(db_session, cur)
@@ -184,7 +234,7 @@ def test_reset_loescht_alle_entries(db_session, data):
 
 
 def test_ohne_vorperiode_kein_vorschlag(db_session, data):
-    grid = budget.build_grid(db_session, data["prev"])  # prev hat keine Vorperiode
+    grid = budget.build_grid(db_session, data["prev"], today=PLAN_TODAY)  # prev hat keine Vorperiode
     assert grid.previous_period_label is None
     for m in grid.months:
         for cell in m.cells.values():
@@ -253,7 +303,7 @@ def test_budget_index_leitet_bei_einer_periode_weiter(client, db_session):
 def test_build_comparison_differenzen(db_session, data):
     cur, prev, gas, garten = data["cur"], data["prev"], data["gas"], data["garten"]
 
-    grid = budget.build_comparison(db_session, cur, prev)
+    grid = budget.build_comparison(db_session, cur, prev, today=PLAN_TODAY)
     m0 = grid.months[0]
     # Gas Monat 0: cur = Ist 800, prev = Ist 745 -> Differenz 55
     assert m0.cells[gas.id].a == Decimal("800.00")
@@ -263,9 +313,9 @@ def test_build_comparison_differenzen(db_session, data):
     assert grid.months[1].cells[gas.id].diff == Decimal("0.00")
 
     # Manuelle Überschreibung in cur schlägt in der Differenz durch
-    budget.save_overrides(db_session, cur, {(3, garten.id): Decimal("120.00")})
+    budget.save_overrides(db_session, cur, {(3, garten.id): Decimal("120.00")}, today=PLAN_TODAY)
     db_session.commit()
-    grid = budget.build_comparison(db_session, cur, prev)
+    grid = budget.build_comparison(db_session, cur, prev, today=PLAN_TODAY)
     m3 = grid.months[3]
     assert m3.cells[garten.id].a == Decimal("120.00")
     assert m3.cells[garten.id].b == Decimal("0.00")
