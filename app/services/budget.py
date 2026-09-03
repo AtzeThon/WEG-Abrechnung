@@ -25,8 +25,11 @@ from app.services.periods import previous_period
 
 ZERO = Decimal("0")
 
-INCOME_KINDS = {CostKind.HAUSGELD, CostKind.SONDERUMLAGE}
-EXPENSE_KINDS = {CostKind.BETRIEBSKOSTEN, CostKind.INVESTITION, CostKind.ERSTATTUNG}
+# Erstattung/Nachzahlung zählt zu den Einnahmen: eine Nachzahlung des Eigentümers
+# ist Geldzufluss (positiv), eine Erstattung an ihn ist Abfluss (negativ) – nicht
+# als „negative Ausgabe" im Ausgabenblock.
+INCOME_KINDS = {CostKind.HAUSGELD, CostKind.SONDERUMLAGE, CostKind.ERSTATTUNG}
+EXPENSE_KINDS = {CostKind.BETRIEBSKOSTEN, CostKind.INVESTITION}
 
 
 # --------------------------------------------------------------------------- #
@@ -76,7 +79,7 @@ def _window_index(windows: list[MonthWindow], d: date) -> int | None:
 
 
 def _signed(kind: CostKind, amount: Decimal) -> Decimal:
-    """Ausgaben als positive Beträge, Einnahmen ebenfalls positiv."""
+    """Einnahmen wie gebucht (Zufluss positiv), Ausgaben als positiver Betrag."""
     return amount if kind in INCOME_KINDS else -amount
 
 

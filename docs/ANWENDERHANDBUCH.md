@@ -215,10 +215,14 @@ Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen i
   *Summe*.
 - Spalten von links nach rechts: **Monat**, **Saldo** (Vormonatssaldo +
   Differenz), **Einnahmen**, **Ausgaben gesamt**, **Differenz** (Einnahmen −
-  Ausgaben), danach je Einnahme-Kostenart (Typ *Hausgeld*, *Sonderumlage*) und
-  je Ausgabe-Kostenart (Typ *Betriebskosten*, *Investition*,
-  *Erstattung/Nachzahlung*) ein Eingabefeld.
+  Ausgaben), danach je Einnahme-Kostenart (Typ *Hausgeld*, *Sonderumlage*,
+  *Erstattung/Nachzahlung*) und je Ausgabe-Kostenart (Typ *Betriebskosten*,
+  *Investition*) ein Eingabefeld.
 - Neue Kostenarten erscheinen automatisch als zusätzliche Spalte.
+- **Erstattung/Nachzahlung** zählt zu den *Einnahmen*: eine Nachzahlung des
+  Eigentümers ist ein Geldzufluss (positiv), eine Erstattung an ihn ein Abfluss
+  (negativ). Auf die *Differenz* und den *Saldo* wirkt sich das nicht aus – nur
+  auf die Aufteilung Einnahmen / Ausgaben.
 
 **Woher die Werte kommen** – je Zelle in dieser Reihenfolge:
 

@@ -117,6 +117,27 @@ def test_laufender_saldo_und_summen(db_session, data):
     assert grid.total_ausgaben == sum(m.ausgaben for m in grid.months)
 
 
+def test_erstattung_zaehlt_zu_den_einnahmen(db_session, data):
+    cur = data["cur"]
+    erst = CostType(name="Erstattung/Nachzahlung", kind=CostKind.ERSTATTUNG, sort_order=9)
+    db_session.add(erst)
+    db_session.commit()
+    # Nachzahlung des Eigentümers (Geldzufluss, positiv gebucht) im 1. Monat
+    db_session.add(
+        Transaction(account_id=data["giro"].id, booking_date=date(2025, 8, 25), payee="E1",
+                    cost_type_id=erst.id, amount=Decimal("183.98"))
+    )
+    db_session.commit()
+
+    grid = budget.build_grid(db_session, cur)
+    assert erst in grid.income_types
+    assert erst not in grid.expense_types
+    cell = grid.months[0].cells[erst.id]
+    assert cell.source == "ist"
+    assert cell.effective == Decimal("183.98")  # positiv, nicht -183,98
+    assert grid.months[0].einnahmen >= Decimal("183.98")
+
+
 def test_save_overrides_upsert_und_delete(db_session, data):
     cur, gas = data["cur"], data["gas"]
     # Monat 1 (September, Index 1): manueller Gas-Wert 750 (weicht vom Vorschlag 745 ab)
