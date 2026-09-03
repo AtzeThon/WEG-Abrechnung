@@ -89,6 +89,7 @@ tr, thead, tbody, tfoot, table { page-break-inside: avoid; }
 TRANSACTIONS_PRINT_CSS = """
 @page { size: A4 portrait; margin: 13mm; }
 
+body { font-size: 7.5pt; }
 table { table-layout: fixed; width: 100% !important; }
 th, td { overflow-wrap: break-word; word-break: break-word; }
 td.text-right, th.text-right { white-space: nowrap; }
