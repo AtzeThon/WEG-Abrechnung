@@ -308,7 +308,11 @@ tailwind/tailwindcss -c tailwind/tailwind.config.js -i tailwind/input.css -o app
 ```
 
 Das Ergebnis `app/static/app.css` **einchecken**. Für die PDF gilt zusätzlich das
-Druck-CSS in `app/pdf.py::_PRINT_CSS`.
+Druck-CSS in `app/pdf.py::_PRINT_CSS` (kompakt, 8 pt) bzw. `BUDGET_PRINT_CSS`
+(Wirtschaftsplan, Querformat). `render_pdf(html, base_url, extra_css=None)` hängt
+optionales CSS hinten an. Buchungsliste als PDF: `GET /buchungen/pdf`
+(`transactions_pdf`, übernimmt dieselben Filter-/Sortier-Query-Parameter wie die
+Liste, Vorlage `transactions/pdf.html`).
 
 ---
 
@@ -331,6 +335,7 @@ Druck-CSS in `app/pdf.py::_PRINT_CSS`.
 | `test_budget.py` | Wirtschaftsplan: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Saldo/Summen, Speichern/Zurücksetzen (Service + Routen) |
 | `test_transfer.py` | Umbuchung zwischen Konten (zwei Beine, Auto-Kostenarten) |
 | `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF" |
+| `test_transactions.py` | CRUD, Filter, Ledger, Buchungsliste als PDF |
 | `test_transactions.py` / `test_crud.py` / `test_smoke.py` | CRUD, Filter (auch leere Query-Parameter), Auth |
 
 `tests/conftest.py`: In-Memory-SQLite je Test, `client`-Fixture (offen), Fixture
