@@ -84,6 +84,21 @@ tr, thead, tbody, tfoot, table { page-break-inside: avoid; }
 """
 
 
+# Buchungsliste: feste Spaltenbreiten, damit die Tabelle die Seite exakt füllt
+# und die Betragsspalte nicht abgeschnitten wird; gleiche Ränder ringsum.
+TRANSACTIONS_PRINT_CSS = """
+@page { size: A4 portrait; margin: 13mm; }
+
+table { table-layout: fixed; width: 100% !important; }
+th, td { overflow-wrap: break-word; word-break: break-word; }
+td.text-right, th.text-right { white-space: nowrap; }
+
+tr.summe { break-before: avoid; page-break-before: avoid; }
+tr.summe td { border-top: 1pt solid #475569 !important; border-bottom: none !important;
+              padding-top: 1mm !important; font-weight: 600; }
+"""
+
+
 def render_pdf(html: str, base_url: str, extra_css: str | None = None) -> bytes:
     try:
         from weasyprint import CSS, HTML

@@ -139,9 +139,11 @@ def transactions_pdf(
         date_from_d=parse_date(date_from), date_to_d=parse_date(date_to),
     )
     try:
-        from app.pdf import render_pdf
+        from app.pdf import TRANSACTIONS_PRINT_CSS, render_pdf
 
-        pdf_bytes = render_pdf(html, base_url=str(request.base_url))
+        pdf_bytes = render_pdf(
+            html, base_url=str(request.base_url), extra_css=TRANSACTIONS_PRINT_CSS
+        )
     except RuntimeError as exc:
         flash(request, str(exc), "error")
         return RedirectResponse(

@@ -15,6 +15,10 @@
 <p class="text-xs text-slate-400 mb-4">Erstellt am {{ erstellt | datum }}</p>
 
 <table class="w-full text-sm">
+  <colgroup>
+    <col style="width: 12%"><col style="width: 27%"><col style="width: 24%">
+    <col style="width: 15%"><col style="width: 8%"><col style="width: 14%">
+  </colgroup>
   <thead>
     <tr>
       <th class="th">Datum</th>
@@ -38,13 +42,12 @@
     {% else %}
     <tr><td class="td text-slate-400" colspan="6">Keine Buchungen für diese Filter.</td></tr>
     {% endfor %}
+    {# Summe als normale Tabellenzeile (nicht als Tabellenfuß) – erscheint dadurch
+       nur einmal am Ende und steht spaltengleich zu den Einzelbeträgen. #}
+    <tr class="summe">
+      <td class="td" colspan="5">Summe ({{ rows | length }} Buchung(en))</td>
+      <td class="td text-right whitespace-nowrap {{ 'text-red-600' if total < 0 }}">{{ total | euro }}</td>
+    </tr>
   </tbody>
 </table>
-
-{# Summe bewusst NACH der Tabelle als eigener Block, damit WeasyPrint sie nur
-   einmal am Ende ausgibt (ein Tabellenfuß würde auf jeder Seite wiederholt). #}
-<div class="flex justify-between border-t-2 border-slate-400 pt-1 mt-1 font-semibold text-sm">
-  <span>Summe ({{ rows | length }} Buchung(en))</span>
-  <span class="{{ 'text-red-600' if total < 0 }}">{{ total | euro }}</span>
-</div>
 {% endblock %}
