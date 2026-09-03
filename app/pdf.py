@@ -89,8 +89,8 @@ tr, thead, tbody, tfoot, table { page-break-inside: avoid; }
 TRANSACTIONS_PRINT_CSS = """
 @page { size: A4 portrait; margin: 13mm; }
 
-body { font-size: 7pt; line-height: 1.15; }
-h1 { font-size: 11pt; }
+body { font-size: 6.5pt; line-height: 1.15; }
+h1 { font-size: 10.5pt; }
 table { table-layout: fixed; width: 100% !important; }
 .th, .td { padding: 0.4mm 1mm !important; }
 th, td { overflow-wrap: break-word; word-break: break-word; }
