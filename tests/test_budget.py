@@ -224,3 +224,59 @@ def test_budget_index_leitet_bei_einer_periode_weiter(client, db_session):
     r = client.get("/wirtschaftsplan", follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"].endswith(f"/wirtschaftsplan/{p.id}")
+
+
+# --------------------------------------------------------------------------- #
+# Jahresvergleich
+# --------------------------------------------------------------------------- #
+def test_build_comparison_differenzen(db_session, data):
+    cur, prev, gas, garten = data["cur"], data["prev"], data["gas"], data["garten"]
+
+    grid = budget.build_comparison(db_session, cur, prev)
+    m0 = grid.months[0]
+    # Gas Monat 0: cur = Ist 800, prev = Ist 745 -> Differenz 55
+    assert m0.cells[gas.id].a == Decimal("800.00")
+    assert m0.cells[gas.id].b == Decimal("745.00")
+    assert m0.cells[gas.id].diff == Decimal("55.00")
+    # Gas Monat 1: cur = Vorschlag 745 (aus prev), prev = Ist 745 -> Differenz 0
+    assert grid.months[1].cells[gas.id].diff == Decimal("0.00")
+
+    # Manuelle Überschreibung in cur schlägt in der Differenz durch
+    budget.save_overrides(db_session, cur, {(3, garten.id): Decimal("120.00")})
+    db_session.commit()
+    grid = budget.build_comparison(db_session, cur, prev)
+    m3 = grid.months[3]
+    assert m3.cells[garten.id].a == Decimal("120.00")
+    assert m3.cells[garten.id].b == Decimal("0.00")
+    assert m3.cells[garten.id].diff == Decimal("120.00")
+
+    # Summen-Differenz konsistent
+    assert grid.total_ausgaben.diff == grid.total_ausgaben.a - grid.total_ausgaben.b
+
+
+def test_compare_index_und_pdf_routen(client, data):
+    cur, prev = data["cur"], data["prev"]
+
+    r = client.get("/jahresvergleich")
+    assert r.status_code == 200
+    assert "Jahresvergleich" in r.text
+    assert cur.label in r.text and prev.label in r.text
+
+    r = client.get(f"/jahresvergleich?jahr={prev.id}&vergleich={cur.id}")
+    assert r.status_code == 200
+
+    r = client.get("/jahresvergleich/pdf", follow_redirects=False)
+    assert r.status_code in (200, 303)
+
+
+def test_compare_index_ohne_zweite_periode(client, db_session):
+    db_session.add(
+        BillingPeriod(
+            label="Einzige", start_date=date(2025, 1, 1), end_date=date(2025, 12, 31),
+            status=PeriodStatus.DRAFT,
+        )
+    )
+    db_session.commit()
+    r = client.get("/jahresvergleich")
+    assert r.status_code == 200
+    assert "zwei Abrechnungsperioden" in r.text
