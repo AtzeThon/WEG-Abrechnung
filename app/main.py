@@ -61,7 +61,7 @@ def _register_routers(app: FastAPI) -> None:
 
     for module_name in (
         "owners", "accounts", "cost_types", "transactions", "imports", "periods", "statements",
-        "budget",
+        "budget", "compare",
     ):
         dotted = f"app.routers.{module_name}"
         if importlib.util.find_spec(dotted) is None:

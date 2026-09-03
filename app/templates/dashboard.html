@@ -10,6 +10,7 @@
     ('transactions_list', 'Buchungen', 'Kontobewegungen erfassen und bearbeiten.'),
     ('periods_list', 'Abrechnungen', 'Wirtschaftsjahre, Übersicht und Einzelabrechnungen.'),
     ('budget_index', 'Wirtschaftsplan', 'Monatliche Prognose je Kostenart mit laufendem Saldo.'),
+    ('compare_index', 'Jahresvergleich', 'Zwei Wirtschaftsjahre gegenüberstellen, Differenzen je Kostenart.'),
   ] %}
   {% for name, title, desc in cards %}
   {% set exists = url_has(request, name) %}

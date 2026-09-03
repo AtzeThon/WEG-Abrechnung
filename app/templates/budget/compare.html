@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Jahresvergleich · {{ APP_NAME }}{% endblock %}
+{% block content %}
+
+{% if grid is none %}
+<h1 class="text-xl font-semibold mb-4">Jahresvergleich</h1>
+<div class="card text-sm text-slate-500">
+  Für einen Jahresvergleich werden mindestens zwei Abrechnungsperioden benötigt.
+  Lege unter <a href="{{ url_for('periods_list') }}" class="text-blue-600 hover:underline">Abrechnungen</a>
+  eine weitere Periode an.
+</div>
+{% else %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-xl font-semibold">Jahresvergleich</h1>
+    <p class="text-sm text-slate-500">
+      {{ period.label }} ({{ period.start_date | datum }} – {{ period.end_date | datum }})
+      &nbsp;gegen&nbsp;
+      {{ base.label }} ({{ base.start_date | datum }} – {{ base.end_date | datum }}) ·
+      Werte aus dem Wirtschaftsplan
+    </p>
+  </div>
+</div>
+
+{% if not pdf %}
+<form method="get" class="card mb-4 flex flex-wrap items-end gap-3 text-sm no-print">
+  <label class="block">
+    <span class="label">Wirtschaftsjahr</span>
+    <select name="jahr" class="input">
+      {% for p in periods %}<option value="{{ p.id }}" {{ 'selected' if p.id == period.id }}>{{ p.label }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="block">
+    <span class="label">Vergleichswirtschaftsjahr</span>
+    <select name="vergleich" class="input">
+      {% for p in periods %}<option value="{{ p.id }}" {{ 'selected' if p.id == base.id }}>{{ p.label }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn-primary">Vergleichen</button>
+  <a href="{{ url_for('compare_pdf') }}?jahr={{ period.id }}&amp;vergleich={{ base.id }}"
+     class="btn-ghost border border-slate-300">PDF</a>
+</form>
+{% endif %}
+
+<div class="card mb-4 overflow-x-auto">
+  <table class="text-sm">
+    <thead>
+      <tr>
+        <th class="th">Kennzahl</th>
+        <th class="th text-right">{{ period.label }}</th>
+        <th class="th text-right">{{ base.label }}</th>
+        <th class="th text-right">Differenz</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name, p in [
+        ('Anfangssaldo (Girokonten)', grid.anfangssaldo),
+        ('Einnahmen gesamt', grid.total_einnahmen),
+        ('Ausgaben gesamt', grid.total_ausgaben),
+        ('Differenz Einnahmen / Ausgaben', grid.total_differenz)] %}
+      <tr>
+        <td class="td">{{ name }}</td>
+        <td class="td text-right">{{ p.a | euro }}</td>
+        <td class="td text-right">{{ p.b | euro }}</td>
+        <td class="td text-right font-semibold {{ 'text-red-600' if p.diff < 0 }}">{{ p.diff | euro }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "budget/_compare_grid.html" %}
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,54 @@
+{#  Jahresvergleich: Zeilen = Monate, Spalten = Kennzahlen + je Kostenart.
+    Jede Zelle zeigt die Differenz Wirtschaftsjahr − Vergleichsjahr.  #}
+{% set ncols = grid.income_types|length + grid.expense_types|length + 3 %}
+{% set colhead = 'th !px-1 text-right align-bottom whitespace-normal break-words leading-tight text-[11px] font-medium' %}
+{% set numcell = 'td !px-1 text-right text-xs whitespace-nowrap' %}
+
+{% macro dc(pair) %}
+  <td class="{{ numcell }} {{ 'text-red-600' if pair.diff < 0 }}"
+      title="{{ period.label }}: {{ pair.a | geld }} · {{ base.label }}: {{ pair.b | geld }}">{{ pair.diff | geld }}</td>
+{% endmacro %}
+
+<div class="card overflow-x-auto">
+  <table class="text-sm table-fixed{{ ' w-full' if pdf }}"{% if not pdf %} style="width: {{ ncols * 5.5 + 7.5 }}rem"{% endif %}>
+    <caption class="text-left text-xs text-slate-400 pb-2">
+      Werte in €, jeweils <span class="font-medium">{{ period.label }} − {{ base.label }}</span>; Ausgaben als positive Werte.
+    </caption>
+    <colgroup>
+      <col{% if not pdf %} style="width: 7.5rem"{% else %} style="width: 9%"{% endif %}>
+      {% for _ in range(ncols) %}<col{% if not pdf %} style="width: 5.5rem"{% endif %}>{% endfor %}
+    </colgroup>
+    <thead>
+      <tr class="align-bottom">
+        <th class="th sticky left-0 bg-white">Monat</th>
+        <th class="{{ colhead }} bg-slate-50">Einnahmen</th>
+        <th class="{{ colhead }} bg-slate-50">Ausgaben gesamt</th>
+        <th class="{{ colhead }} bg-slate-50">Differenz</th>
+        {% for ct in grid.income_types %}<th class="{{ colhead }}">{{ ct.name }}</th>{% endfor %}
+        {% for ct in grid.expense_types %}<th class="{{ colhead }}">{{ ct.name }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in grid.months %}
+      <tr>
+        <td class="td font-medium sticky left-0 bg-white whitespace-nowrap">{{ m.label }}</td>
+        {{ dc(m.einnahmen) }}
+        {{ dc(m.ausgaben) }}
+        {{ dc(m.differenz) }}
+        {% for ct in grid.income_types %}{{ dc(m.cells[ct.id]) }}{% endfor %}
+        {% for ct in grid.expense_types %}{{ dc(m.cells[ct.id]) }}{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="font-semibold border-t-2 border-slate-300">
+        <td class="td sticky left-0 bg-white whitespace-nowrap">Summe</td>
+        {{ dc(grid.total_einnahmen) }}
+        {{ dc(grid.total_ausgaben) }}
+        {{ dc(grid.total_differenz) }}
+        {% for ct in grid.income_types %}{{ dc(grid.totals[ct.id]) }}{% endfor %}
+        {% for ct in grid.expense_types %}{{ dc(grid.totals[ct.id]) }}{% endfor %}
+      </tr>
+    </tfoot>
+  </table>
+</div>
