@@ -19,11 +19,12 @@
       {% for _ in range(ncols) %}<col{% if not pdf %} style="width: 5.5rem"{% endif %}>{% endfor %}
     </colgroup>
     <thead>
+      {% set grouphead = '!px-2 py-1 text-center align-middle border border-slate-300 bg-slate-50 rounded-sm' %}
       <tr class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
         <th class="!px-1 sticky left-0 bg-white"></th>
-        <th class="!px-1 pb-1 text-center border-b border-slate-300" colspan="3">Gesamt</th>
-        {% if grid.income_types %}<th class="!px-1 pb-1 text-center border-b border-slate-300" colspan="{{ grid.income_types|length }}">Einnahmen</th>{% endif %}
-        {% if grid.expense_types %}<th class="!px-1 pb-1 text-center border-b border-slate-300" colspan="{{ grid.expense_types|length }}">Ausgaben</th>{% endif %}
+        <th class="{{ grouphead }}" colspan="3">Gesamt</th>
+        {% if grid.income_types %}<th class="{{ grouphead }}" colspan="{{ grid.income_types|length }}">Einnahmen</th>{% endif %}
+        {% if grid.expense_types %}<th class="{{ grouphead }}" colspan="{{ grid.expense_types|length }}">Ausgaben</th>{% endif %}
       </tr>
       <tr class="align-bottom">
         <th class="th sticky left-0 bg-white">Monat</th>
