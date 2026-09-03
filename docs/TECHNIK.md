@@ -234,6 +234,16 @@ Jinja-Filter in `app/locale.py`: `betrag` für die Eingabefelder (zwei
 Nachkommastellen, kein Tausendertrenner), `geld` für die Anzeigezahlen im
 Raster (Tausendertrenner, zwei Nachkommastellen, kein €-Symbol).
 
+**Jahresvergleich** (`services/budget.py::build_comparison`, `routers/compare.py`,
+Prefix `/jahresvergleich`, in `_register_routers` als `"compare"`): baut für
+zwei Perioden je `build_grid()` und stellt sie Monatsindex ↔ Monatsindex und
+Kostenart ↔ Kostenart gegenüber. Dataclasses `DiffPair(a, b)` mit `.diff`,
+`CompareMonth`, `CompareGrid`. Kostenarten sind die Vereinigung beider Grids.
+Ansicht (`budget/compare.html`, `_compare_grid.html`) wie der Wirtschaftsplan,
+aber **ohne Saldo-Spalte**, Zellen zeigen `a − b`. Parameter `?jahr=` (Default:
+jüngste Periode) und `?vergleich=` (Default: `previous_period`). PDF wie beim
+Wirtschaftsplan (`BUDGET_PRINT_CSS`, leere Spalten weggelassen).
+
 ---
 
 ## 7. Konfiguration
@@ -332,7 +342,7 @@ Liste, Vorlage `transactions/pdf.html`).
 | `test_csv_parser.py` | `sniff` / `detect_mapping` / `parse_rows` gegen Fixtures (`tests/fixtures/bank_csv/`) |
 | `test_imports_flow.py` | Upload → Mapping → Prüfen → Buchen; Duplikat-Zweitimport; Historien-Vorschlag; Kategorie-/Eigentümer-Spalte |
 | `test_period_workflow.py` | Abschluss-Sperre; Salden aus Vorperiode |
-| `test_budget.py` | Wirtschaftsplan: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Saldo/Summen, Speichern/Zurücksetzen (Service + Routen) |
+| `test_budget.py` | Wirtschaftsplan + Jahresvergleich: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Saldo/Summen, Speichern/Zurücksetzen, Differenzen zweier Perioden (Service + Routen) |
 | `test_transfer.py` | Umbuchung zwischen Konten (zwei Beine, Auto-Kostenarten) |
 | `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF" |
 | `test_transactions.py` | CRUD, Filter, Ledger, Buchungsliste als PDF |
@@ -353,7 +363,8 @@ Liste, Vorlage `transactions/pdf.html`).
   SMTP-Service ließe sich andocken.
 - **Eigentümer-Login** mit Zugriff nur auf die eigene Abrechnung: nicht umgesetzt
   (`User`-Modell vorhanden, keine Owner-Verknüpfung).
-- **Mehrjahresvergleich / Diagramme**: nicht umgesetzt.
+- **Mehrjahresvergleich / Diagramme**: der Jahresvergleich stellt genau zwei
+  Perioden gegenüber; mehr als zwei Jahre oder grafische Auswertungen fehlen.
 - **Wirtschaftsplan**: Prognose nur aus der unmittelbaren Vorperiode (kein
   Mittelwert mehrerer Jahre, keine Indexierung/Steigerungssätze).
 - **Plausibilitätswarnungen** in der Perioden-Übersicht (z. B. „Investitions-

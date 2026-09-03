@@ -244,6 +244,21 @@ hier nicht mit.
   im PDF Kostenart-Spalten **ohne Wert weggelassen**; die Bildschirmansicht zeigt
   weiterhin alle.
 
+### 5.6 Jahresvergleich
+
+Der Menüpunkt **Jahresvergleich** stellt die Wirtschaftsplan-Werte zweier
+Wirtschaftsjahre gegenüber. Zwei Auswahlfelder:
+
+- **Wirtschaftsjahr** – vorbelegt mit dem aktuellen (jüngsten) Wirtschaftsjahr.
+- **Vergleichswirtschaftsjahr** – vorbelegt mit dem unmittelbar vorangehenden.
+
+Über der Kopftabelle stehen die Gesamtwerte beider Jahre (Anfangssaldo,
+Einnahmen, Ausgaben, Differenz) samt Differenz. Das Monatsraster ist wie beim
+Wirtschaftsplan aufgebaut – **ohne die Spalte *Saldo***. In jeder Zelle steht
+die **Differenz** *Wirtschaftsjahr − Vergleichswirtschaftsjahr* (die beiden
+Einzelwerte erscheinen im Tooltip). Negative Differenzen sind rot. Auch hier
+gibt es einen **PDF**-Export im Querformat.
+
 ---
 
 ## 6. Spezialfälle / How-To
