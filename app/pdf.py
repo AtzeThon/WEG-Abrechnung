@@ -16,30 +16,34 @@ _PRINT_CSS = """
 
 * { box-shadow: none !important; }
 html, body { background: #fff !important; color: #0f172a; }
-body { font-size: 9pt; line-height: 1.28; }
+body { font-size: 8pt; line-height: 1.22; }
 
 .no-print, header, nav { display: none !important; }
 
 /* volle Seitenbreite statt zentriertem max-width-Container */
 main { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
 
-h1 { font-size: 13pt; margin: 0 0 1mm; }
-h2 { font-size: 9.5pt; margin: 0 0 1mm; }
-p  { margin: 0 0 1mm; }
+h1 { font-size: 12pt; margin: 0 0 1mm; }
+h2 { font-size: 8.5pt; margin: 0 0 0.8mm; }
+p  { margin: 0 0 0.8mm; }
+.text-base { font-size: 8pt !important; }
+.text-lg { font-size: 9.5pt !important; }
+.text-xl { font-size: 12pt !important; }
 
 /* Abstände fürs Papier zusammenstreichen */
-.mb-6 { margin-bottom: 3mm !important; }
-.mt-6 { margin-top: 3mm !important; }
-.mt-4 { margin-top: 2mm !important; }
-.gap-6 { gap: 3mm !important; }
+.mb-6 { margin-bottom: 2.5mm !important; }
+.mt-6 { margin-top: 2.5mm !important; }
+.mt-4 { margin-top: 1.5mm !important; }
+.mb-4 { margin-bottom: 1.5mm !important; }
+.gap-6 { gap: 2.5mm !important; }
 
 /* Karten flach, kein Schatten */
 .card { background: #fff !important; border: 1px solid #cbd5e1; border-radius: 0;
-        padding: 1.5mm 2.5mm !important; }
+        padding: 1.2mm 2mm !important; }
 
 /* Tabellen kompakt */
 table { width: 100% !important; border-collapse: collapse; }
-.th, .td { padding: 0.8mm 1.6mm !important; }
+.th, .td { padding: 0.6mm 1.3mm !important; }
 .th { border-bottom: 0.6pt solid #64748b; }
 .td { border-bottom: 0.4pt solid #e2e8f0; }
 td.text-right, th.text-right { white-space: nowrap; }
