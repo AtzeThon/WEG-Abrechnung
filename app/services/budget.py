@@ -282,3 +282,101 @@ def save_overrides(
 def reset(db: Session, period: BillingPeriod) -> int:
     n = db.query(BudgetEntry).filter(BudgetEntry.period_id == period.id).delete()
     return n
+
+
+# --------------------------------------------------------------------------- #
+# Jahresvergleich (zwei Wirtschaftspläne gegenüberstellen)
+# --------------------------------------------------------------------------- #
+@dataclass
+class DiffPair:
+    """Wert des Wirtschaftsjahres (``a``) und des Vergleichsjahres (``b``)."""
+
+    a: Decimal = ZERO
+    b: Decimal = ZERO
+
+    @property
+    def diff(self) -> Decimal:
+        return self.a - self.b
+
+
+@dataclass
+class CompareMonth:
+    index: int
+    label: str
+    einnahmen: DiffPair
+    ausgaben: DiffPair
+    differenz: DiffPair
+    cells: dict[int, DiffPair]
+
+
+@dataclass
+class CompareGrid:
+    period: BillingPeriod
+    base_period: BillingPeriod
+    months: list[CompareMonth]
+    income_types: list[CostType]
+    expense_types: list[CostType]
+    totals: dict[int, DiffPair]
+    total_einnahmen: DiffPair
+    total_ausgaben: DiffPair
+    total_differenz: DiffPair
+    anfangssaldo: DiffPair
+
+
+def _union_cost_types(xs: list[CostType], ys: list[CostType]) -> list[CostType]:
+    by_id: dict[int, CostType] = {c.id: c for c in xs}
+    for c in ys:
+        by_id.setdefault(c.id, c)
+    return sorted(by_id.values(), key=lambda c: (c.sort_order, c.name))
+
+
+def build_comparison(
+    db: Session, period: BillingPeriod, base_period: BillingPeriod
+) -> CompareGrid:
+    """Stellt die Wirtschaftsplan-Werte zweier Perioden je Monat und Kostenart
+    gegenüber (Monatsindex ↔ Monatsindex). Angezeigt wird jeweils die Differenz
+    ``Wirtschaftsjahr − Vergleichsjahr``."""
+    ga = build_grid(db, period)
+    gb = build_grid(db, base_period)
+
+    income_types = _union_cost_types(ga.income_types, gb.income_types)
+    expense_types = _union_cost_types(ga.expense_types, gb.expense_types)
+    col_types = income_types + expense_types
+
+    a_by_i = {m.index: m for m in ga.months}
+    b_by_i = {m.index: m for m in gb.months}
+
+    def _cell(m: BudgetMonth | None, ct_id: int) -> Decimal:
+        if m is None or ct_id not in m.cells:
+            return ZERO
+        return m.cells[ct_id].effective
+
+    months: list[CompareMonth] = []
+    for i in sorted(set(a_by_i) | set(b_by_i)):
+        ma, mb = a_by_i.get(i), b_by_i.get(i)
+        months.append(
+            CompareMonth(
+                index=i,
+                label=(ma or mb).label,
+                einnahmen=DiffPair(ma.einnahmen if ma else ZERO, mb.einnahmen if mb else ZERO),
+                ausgaben=DiffPair(ma.ausgaben if ma else ZERO, mb.ausgaben if mb else ZERO),
+                differenz=DiffPair(ma.differenz if ma else ZERO, mb.differenz if mb else ZERO),
+                cells={c.id: DiffPair(_cell(ma, c.id), _cell(mb, c.id)) for c in col_types},
+            )
+        )
+
+    return CompareGrid(
+        period=period,
+        base_period=base_period,
+        months=months,
+        income_types=income_types,
+        expense_types=expense_types,
+        totals={
+            c.id: DiffPair(ga.totals.get(c.id, ZERO), gb.totals.get(c.id, ZERO))
+            for c in col_types
+        },
+        total_einnahmen=DiffPair(ga.total_einnahmen, gb.total_einnahmen),
+        total_ausgaben=DiffPair(ga.total_ausgaben, gb.total_ausgaben),
+        total_differenz=DiffPair(ga.total_differenz, gb.total_differenz),
+        anfangssaldo=DiffPair(ga.anfangssaldo, gb.anfangssaldo),
+    )
