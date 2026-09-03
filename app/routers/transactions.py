@@ -122,12 +122,11 @@ def transactions_pdf(
     date_from: str | None = None,
     date_to: str | None = None,
     q: str | None = None,
-    sort: str = "datum",
-    dir: str = "desc",
 ):
+    # Fürs PDF immer chronologisch (älteste oben), unabhängig von der Listensortierung.
     context = _filtered_rows(
         db, account_id=account_id, owner_id=owner_id, cost_type_id=cost_type_id,
-        date_from=date_from, date_to=date_to, q=q, sort=sort, dir=dir,
+        date_from=date_from, date_to=date_to, q=q, sort="datum", dir="asc",
     )
     f = context["filters"]
     by_id = {
@@ -136,7 +135,8 @@ def transactions_pdf(
         "owner": next((o.code for o in context["owners"] if o.id == f["owner_id"]), None),
     }
     html = templates.get_template("transactions/pdf.html").render(
-        request=request, **context, labels=by_id, erstellt=date.today()
+        request=request, **context, labels=by_id, erstellt=date.today(),
+        date_from_d=parse_date(date_from), date_to_d=parse_date(date_to),
     )
     try:
         from app.pdf import render_pdf

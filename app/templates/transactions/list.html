@@ -4,16 +4,14 @@
 <div class="flex items-center justify-between mb-4">
   <h1 class="text-xl font-semibold">Buchungen</h1>
   <div class="flex gap-2">
-    <a href="{{ url_for('transactions_pdf') }}?{{ {'account_id': filters.account_id or '', 'owner_id': filters.owner_id or '',
-          'cost_type_id': filters.cost_type_id or '', 'date_from': filters.date_from, 'date_to': filters.date_to,
-          'q': filters.q, 'sort': filters.sort, 'dir': filters.dir} | urlencode }}"
+    <a id="txn-pdf-link" href="{{ url_for('transactions_pdf') }}"
        class="btn-ghost border border-slate-300">PDF</a>
     <a href="{{ url_for('transfer_new') }}" class="btn-ghost border border-slate-300">↔ Umbuchung</a>
     <a href="{{ url_for('transactions_new') }}" class="btn-primary">+ Buchung</a>
   </div>
 </div>
 
-<form class="card mb-4 grid gap-3 md:grid-cols-3 lg:grid-cols-6 text-sm"
+<form id="txn-filter" class="card mb-4 grid gap-3 md:grid-cols-3 lg:grid-cols-6 text-sm"
       hx-get="{{ url_for('transactions_list') }}" hx-target="#txn-table" hx-push-url="true"
       hx-trigger="change, keyup delay:400ms from:[name=q], submit">
   <label class="block">
@@ -56,4 +54,26 @@
 <div id="txn-table">
   {% include "transactions/_table.html" %}
 </div>
+
+<script>
+  // PDF-Link an die aktuell gewählten Filter angleichen (die Liste filtert per htmx,
+  // ohne diesen Kopfbereich neu zu rendern).
+  (function () {
+    var form = document.getElementById('txn-filter');
+    var link = document.getElementById('txn-pdf-link');
+    if (!form || !link) return;
+    var base = link.href.split('?')[0];
+    function sync() {
+      var p = new URLSearchParams();
+      new FormData(form).forEach(function (v, k) {
+        if (v !== '' && k !== 'sort' && k !== 'dir') p.append(k, v);
+      });
+      var qs = p.toString();
+      link.href = qs ? base + '?' + qs : base;
+    }
+    form.addEventListener('change', sync);
+    form.addEventListener('keyup', sync);
+    sync();
+  })();
+</script>
 {% endblock %}

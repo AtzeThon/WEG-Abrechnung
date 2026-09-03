@@ -5,8 +5,8 @@
 
 <h1 class="text-xl font-semibold">Buchungen</h1>
 <p class="text-sm text-slate-600 mb-1">
-  {{ rows | length }} Buchung(en){% if f.date_from or f.date_to %} ·
-    Zeitraum {{ f.date_from or '…' }} – {{ f.date_to or '…' }}{% endif %}
+  {{ rows | length }} Buchung(en){% if date_from_d or date_to_d %} ·
+    Zeitraum {{ (date_from_d | datum) or '…' }} – {{ (date_to_d | datum) or '…' }}{% endif %}
   {%- if labels.account %} · Konto: {{ labels.account }}{% endif %}
   {%- if labels.cost_type %} · Kostenart: {{ labels.cost_type }}{% endif %}
   {%- if labels.owner %} · Eigentümer: {{ labels.owner }}{% endif %}
@@ -39,11 +39,12 @@
     <tr><td class="td text-slate-400" colspan="6">Keine Buchungen für diese Filter.</td></tr>
     {% endfor %}
   </tbody>
-  <tfoot>
-    <tr class="font-semibold border-t-2 border-slate-300">
-      <td class="td" colspan="5">Summe</td>
-      <td class="td text-right {{ 'text-red-600' if total < 0 }}">{{ total | euro }}</td>
-    </tr>
-  </tfoot>
 </table>
+
+{# Summe bewusst NACH der Tabelle als eigener Block, damit WeasyPrint sie nur
+   einmal am Ende ausgibt (ein Tabellenfuß würde auf jeder Seite wiederholt). #}
+<div class="flex justify-between border-t-2 border-slate-400 pt-1 mt-1 font-semibold text-sm">
+  <span>Summe ({{ rows | length }} Buchung(en))</span>
+  <span class="{{ 'text-red-600' if total < 0 }}">{{ total | euro }}</span>
+</div>
 {% endblock %}

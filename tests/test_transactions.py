@@ -91,6 +91,42 @@ def test_transactions_pdf_route(client, db_session):
         assert r.headers["content-type"] == "application/pdf"
 
 
+def test_transactions_pdf_beachtet_datumsfilter_und_sortiert_aufsteigend(db_session):
+    from app.routers.transactions import _filtered_rows
+
+    giro, ct, _hg, _e1 = _base_data(db_session)
+    db_session.add_all([
+        Transaction(account_id=giro.id, booking_date=date(2025, 12, 31), payee="alt",
+                    cost_type_id=ct.id, amount=Decimal("-10")),
+        Transaction(account_id=giro.id, booking_date=date(2026, 3, 1), payee="neu",
+                    cost_type_id=ct.id, amount=Decimal("-30")),
+        Transaction(account_id=giro.id, booking_date=date(2026, 1, 15), payee="mitte",
+                    cost_type_id=ct.id, amount=Decimal("-20")),
+    ])
+    db_session.commit()
+
+    ctx = _filtered_rows(
+        db_session, account_id=None, owner_id=None, cost_type_id=None,
+        date_from="2026-01-01", date_to="2026-02-01", q=None, sort="datum", dir="asc",
+    )
+    assert [t.payee for t in ctx["rows"]] == ["mitte"]
+
+    ctx = _filtered_rows(
+        db_session, account_id=None, owner_id=None, cost_type_id=None,
+        date_from=None, date_to=None, q=None, sort="datum", dir="asc",
+    )
+    assert [t.payee for t in ctx["rows"]] == ["alt", "mitte", "neu"]  # älteste oben
+
+
+def test_transactions_pdf_template_ohne_wiederholte_summe():
+    # Summe steht als <div> hinter der Tabelle, nicht als <tfoot> (das WeasyPrint je Seite wiederholt).
+    from pathlib import Path
+
+    src = Path("app/templates/transactions/pdf.html").read_text(encoding="utf-8")
+    assert "<tfoot" not in src
+    assert src.count("Summe (") == 1
+
+
 def test_inline_kostenart_anlegen(client, db_session):
     r = client.post("/kostenarten/inline-neu", data={
         "name": "Neue Art", "category": "sonstiges", "kind": "betriebskosten",

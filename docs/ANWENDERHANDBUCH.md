@@ -96,9 +96,10 @@ Deutsches Zahlenformat mit Komma und Punkt wird erkannt.
 Volltext (Zahlungspartner/Notiz). Klick auf eine Spaltenüberschrift sortiert.
 Importierte Buchungen tragen ein kleines **CSV**-Kennzeichen am Datum.
 
-Mit **PDF** (oben rechts) wird die aktuell gefilterte und sortierte Liste als
-PDF ausgegeben (mit Filter- und Summenangabe im Kopf; auf dem Raspberry Pi,
-sonst erscheint ein Hinweis).
+Mit **PDF** (oben rechts) wird die aktuell **gefilterte** Liste als PDF
+ausgegeben – chronologisch sortiert (älteste Buchung oben), mit Filterangabe im
+Kopf und der Gesamtsumme am Ende der letzten Seite (auf dem Raspberry Pi, sonst
+erscheint ein Hinweis).
 
 ### 4.3 CSV-Import von Kontoauszügen
 
