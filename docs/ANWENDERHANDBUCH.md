@@ -155,6 +155,12 @@ Menü **Abrechnungen**.
 **+ Abrechnungsperiode** → Bezeichnung, Zeitraum *von/bis*, **Rücklagen-Anfangssaldo
 (gesamt)**. Nach dem Anlegen landest du in der Bearbeiten-Maske.
 
+Ebenfalls in den Stammdaten:
+
+- **Künftigen monatlichen Abschlag berechnen** (Häkchen) – blendet in jeder
+  Einzelabrechnung eine Empfehlung für den neuen Hausgeld-Abschlag ein (siehe 5.3).
+- **Inflationsrate (%)** – optionaler Aufschlag auf diesen berechneten Abschlag.
+
 > Lässt du „Rücklagen-Anfangssaldo (gesamt)" auf **0**, nimmt die Abrechnung
 > automatisch den Stand des Rücklagenkontos zu Periodenbeginn (siehe 3.2). Ein
 > von 0 verschiedener Wert hat Vorrang. Die Perioden-Übersicht zeigt unter der
@@ -190,6 +196,18 @@ Eigentümer (Positionen, Lieferant, WEG-Gesamtkosten, Umlageschlüssel, „Ihr A
 Summe, geleistetes Hausgeld, Guthaben/Nachzahlung, Hausgeldkonto- und
 Rücklagen-Block, Saldo gesamt). Dort **PDF herunterladen**.
 **Alle als PDF** erzeugt eine PDF mit allen Eigentümern (eine Seite pro Person).
+
+**Künftiger monatlicher Abschlag:** Ist in der Abrechnungsperiode das Häkchen
+„Künftigen monatlichen Abschlag berechnen" gesetzt (5.1), zeigt die
+Einzelabrechnung zusätzlich einen Block mit einer Empfehlung für das kommende
+Wirtschaftsjahr:
+
+> geleistete Hausgeldzahlungen der Periode
+> **+** Nachzahlung bzw. **−** Guthaben
+> **=** Bemessungsgrundlage
+> **÷ 12** Monate
+> **+** Inflationsrate (falls gepflegt)
+> **=** neuer Abschlag, kaufmännisch auf **volle Euro** gerundet
 
 ### 5.4 Abrechnung abschließen
 

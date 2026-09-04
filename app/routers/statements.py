@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from app import auth
+from app.allocation import compute_next_advance
 from app.database import get_db
 from app.models import BillingPeriod
 from app.models.enums import CostCategory
@@ -23,11 +24,18 @@ def _statement_context(db: Session, period: BillingPeriod, code: str, *, pdf: bo
     result = compute_period(db, period)
     if code not in result.owners:
         return None
+    owner = result.owner_result(code)
+    next_advance = (
+        compute_next_advance(owner.hausgeld_paid, owner.guthaben, period.inflation_rate)
+        if period.compute_next_advance
+        else None
+    )
     return {
         "period": period,
         "result": result,
-        "owner": result.owner_result(code),
+        "owner": owner,
         "cost_groups": _cost_groups(result, code),
+        "next_advance": next_advance,
         "pdf": pdf,
         "year": period.end_date.year,
     }
@@ -92,10 +100,18 @@ def all_statements_pdf(request: Request, period_id: int, db: Session = Depends(g
         return RedirectResponse(request.url_for("periods_list"), status_code=status.HTTP_303_SEE_OTHER)
 
     result = compute_period(db, period)
-    statements = [
-        {"owner": result.owner_result(code), "cost_groups": _cost_groups(result, code)}
-        for code in result.owner_order
-    ]
+    statements = []
+    for code in result.owner_order:
+        owner = result.owner_result(code)
+        statements.append({
+            "owner": owner,
+            "cost_groups": _cost_groups(result, code),
+            "next_advance": (
+                compute_next_advance(owner.hausgeld_paid, owner.guthaben, period.inflation_rate)
+                if period.compute_next_advance
+                else None
+            ),
+        })
     html = templates.get_template("statements_all.html").render(
         request=request,
         period=period,

@@ -27,6 +27,26 @@
       ({{ reserve_account_balance | euro }}).
       {% endif %}
     </p>
+
+    <div class="border-t border-slate-200 pt-4 space-y-3">
+      <label class="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="compute_next_advance" value="1" class="mt-0.5"
+               {{ 'checked' if period and period.compute_next_advance }}>
+        <span>
+          <span class="font-medium">Künftigen monatlichen Abschlag berechnen</span><br>
+          <span class="text-xs text-slate-400">
+            Weist in jeder Einzelabrechnung den neuen Hausgeld-Abschlag aus:
+            (geleistete Hausgeldzahlungen ± Nachzahlung/Guthaben) ÷ 12,
+            danach Inflationsaufschlag, kaufmännisch auf volle Euro gerundet.
+          </span>
+        </span>
+      </label>
+      <label class="block max-w-[12rem]">
+        <span class="label">Inflationsrate (%)</span>
+        <input class="input text-right" name="inflation_rate" inputmode="decimal"
+               value="{{ (period.inflation_rate | dezimal) if period else '0,00' }}">
+      </label>
+    </div>
   </div>
 
   {% if period %}

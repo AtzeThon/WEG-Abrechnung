@@ -1,4 +1,4 @@
-{# Inhalt einer Einzelabrechnung. Erwartet: owner, cost_groups, result, period, year, pdf #}
+{# Inhalt einer Einzelabrechnung. Erwartet: owner, cost_groups, result, period, year, pdf, next_advance? #}
 {% macro money(v) %}<span class="{{ 'text-red-600' if v < 0 }}">{{ v | euro }}</span>{% endmacro %}
 {% set _schluessel = {'mea': 'MEA', 'zaehler': 'Zähler', 'vorauszahlung': 'Vorauszahlung',
                       'proportional': 'proportional'} %}
@@ -65,6 +65,50 @@
     </tr>
   </tfoot>
 </table>
+
+{% if next_advance %}
+{% set na = next_advance %}
+<div class="card mb-6">
+  <h2 class="font-bold mb-2">Künftiger monatlicher Abschlag</h2>
+  <table class="w-full text-sm">
+    <tbody>
+      <tr>
+        <td class="td">Geleistete Hausgeldzahlungen {{ year }}</td>
+        <td class="td text-right">{{ na.hausgeld_paid | euro }}</td>
+      </tr>
+      <tr>
+        <td class="td">
+          {{ 'zzgl. Nachzahlung' if na.settlement >= 0 else 'abzgl. Guthaben' }} {{ year }}
+        </td>
+        <td class="td text-right">
+          {{ '+ ' if na.settlement >= 0 else '− ' }}{{ (na.settlement if na.settlement >= 0 else -na.settlement) | euro }}
+        </td>
+      </tr>
+      <tr class="border-t border-slate-200">
+        <td class="td">Bemessungsgrundlage</td>
+        <td class="td text-right">{{ na.base | euro }}</td>
+      </tr>
+      <tr>
+        <td class="td">÷ {{ na.months }} Monate</td>
+        <td class="td text-right">{{ na.monthly | euro }}</td>
+      </tr>
+      {% if na.inflation_rate %}
+      <tr>
+        <td class="td">zzgl. {{ na.inflation_rate | dezimal }} % Inflationsanpassung</td>
+        <td class="td text-right">{{ na.monthly_inflated | euro }}</td>
+      </tr>
+      {% endif %}
+      <tr class="text-base font-bold border-t-2 border-slate-300">
+        <td class="td">Neuer monatlicher Abschlag (gerundet)</td>
+        <td class="td text-right">{{ na.amount | euro }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="text-xs text-slate-400 mt-2">
+    Empfehlung für das kommende Wirtschaftsjahr, kaufmännisch auf volle Euro gerundet.
+  </p>
+</div>
+{% endif %}
 
 <div class="grid sm:grid-cols-2 gap-6">
   <div class="card">

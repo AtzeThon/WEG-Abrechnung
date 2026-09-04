@@ -12,6 +12,10 @@
       <span class="{{ 'text-green-700' if period.status.value == 'final' else 'text-amber-600' }}">
         {{ 'abgeschlossen (Buchungen gesperrt)' if period.status.value == 'final' else 'Entwurf' }}
       </span>
+      {% if period.compute_next_advance %}
+      · <span class="text-slate-500">künftiger Abschlag wird ausgewiesen{% if period.inflation_rate %}
+        (+{{ period.inflation_rate | dezimal }} % Inflation){% endif %}</span>
+      {% endif %}
     </p>
   </div>
   <div class="flex gap-2 no-print">

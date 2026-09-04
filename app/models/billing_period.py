@@ -5,7 +5,17 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, UniqueConstraint, func
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -25,6 +35,15 @@ class BillingPeriod(Base):
     # Rücklagen-Anfangssaldo der Periode als EIN Gesamtbetrag (Gemeinschaftskonto).
     # Die Engine verteilt ihn anteilig nach MEA.
     reserve_opening_balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
+
+    # Flag: in der Einzelabrechnung den künftigen monatlichen Abschlag ausweisen.
+    compute_next_advance: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0"
+    )
+    # Inflationsaufschlag in Prozent auf den berechneten neuen Abschlag (0 = keiner).
+    inflation_rate: Mapped[Decimal] = mapped_column(
+        Numeric(6, 2), default=Decimal("0"), server_default="0"
+    )
 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

@@ -3,7 +3,7 @@
 {% block content %}
 {% for s in statements %}
 <section class="{{ 'statement-page' if not loop.first }}">
-  {% with owner=s.owner, cost_groups=s.cost_groups, result=result, period=period, year=year, pdf=True %}
+  {% with owner=s.owner, cost_groups=s.cost_groups, next_advance=s.next_advance, result=result, period=period, year=year, pdf=True %}
     {% include "statements/_body.html" %}
   {% endwith %}
 </section>

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from sqlalchemy import select
 
 from app.models import BillingPeriod
@@ -22,6 +24,28 @@ def test_statement_web_zeigt_kernwerte(client, db_session):
     assert "2.820,00" in r.text          # geleistetes Hausgeld
     assert "148,55" in r.text            # Guthaben
     assert "Hausgeldkonto" in r.text and "Rücklage" in r.text
+
+
+def test_kuenftiger_abschlag_nur_bei_gesetztem_flag(client, db_session):
+    period = _period(db_session)
+
+    # Flag aus (Default) -> kein Abschnitt
+    r = client.get(f"/abrechnungen/{period.id}/eigentuemer/E1")
+    assert "Künftiger monatlicher Abschlag" not in r.text
+
+    # Flag an, 3 % Inflation
+    period.compute_next_advance = True
+    period.inflation_rate = Decimal("3.00")
+    db_session.commit()
+
+    r = client.get(f"/abrechnungen/{period.id}/eigentuemer/E1")
+    assert r.status_code == 200
+    assert "Künftiger monatlicher Abschlag" in r.text
+    assert "3 % Inflationsanpassung" in r.text
+    # E1: Hausgeld 2.820, Guthaben +148,55 -> Grundlage 2.671,45 -> /12 = 222,62
+    # -> * 1,03 = 229,30 -> gerundet 229
+    assert "Neuer monatlicher Abschlag" in r.text
+    assert "229,00" in r.text
 
 
 def test_statement_unbekannter_eigentuemer_leitet_um(client, db_session):

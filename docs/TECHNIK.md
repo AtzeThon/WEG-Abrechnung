@@ -71,7 +71,7 @@ Strings (`Enum(..., native_enum=False)`).
 | `accounts` | Bankkonten | `name`, `type` (`giro`/`ruecklage`), `opening_balance(_date)` |
 | `cost_types` | Kostenarten | `name` (unique), `category`, `default_supplier`, `kind`, `allocation_strategy`, `proportional_to_id` |
 | `transactions` | Buchungen | `account_id`, `booking_date`, `payee`, `cost_type_id`, `owner_id?`, `amount`, `note`, `source` (`manuell`/`csv_import`), `import_row_id?` |
-| `billing_periods` | Abrechnungsperioden | `label`, `start_date`, `end_date`, `status` (`draft`/`final`), `reserve_opening_balance`, `finalized_at?` |
+| `billing_periods` | Abrechnungsperioden | `label`, `start_date`, `end_date`, `status` (`draft`/`final`), `reserve_opening_balance`, `compute_next_advance` (bool), `inflation_rate` (%), `finalized_at?` |
 | `period_opening_balances` | Saldovortrag Hausgeld je Eigentümer/Periode | `period_id`, `owner_id`, `hausgeld_carryover` (unique je Paar) |
 | `allocation_overrides` | Zähler-Direkteingaben je Kostenart×Eigentümer×Periode | `period_id`, `cost_type_id`, `owner_id`, `amount` |
 | `budget_entries` | Wirtschaftsplan: manuell überschriebene Zelle | `period_id`, `month_index` (0 = erster Monat), `cost_type_id`, `amount` (unique je Tripel) |
@@ -148,6 +148,15 @@ der Periode. Vorrang hat `period.reserve_opening_balance`; ist er 0, wird der
 Stand des Rücklagenkontos zu Periodenbeginn genommen
 (`Account.opening_balance + Σ Buchungen vor `start_date``). Der zweite Rückgabewert
 ist eine Herkunftsbeschreibung für die Anzeige.
+
+### Künftiger Abschlag (`app/allocation/advance.py`, rein)
+
+`compute_next_advance(hausgeld_paid, guthaben, inflation_rate=None, *, months=12)
+-> NextAdvance`. `settlement = -guthaben` (Nachzahlung positiv), `base = hausgeld_paid
++ settlement` (≙ Kostenanteil des Eigentümers), `monthly = base/months`, danach
+`× (1 + rate/100)`, Endbetrag `amount` **kaufmännisch auf volle Euro**
+(`ROUND_HALF_UP`). `statements.py::_statement_context` ruft das nur bei
+`period.compute_next_advance` und reicht `next_advance` an `statements/_body.html`.
 
 ---
 
@@ -282,7 +291,8 @@ CLI (`python -m app.cli`): `initdb`, `create-admin <name> [--password …]`.
 - `migrations/env.py` bezieht Engine und Metadaten aus der App
   (`WEG_DATABASE_PATH` gilt also auch für Alembic).
 - Bisherige Revisionen: `f5b2ccfd55a5` (Initialschema), `50dc58878cdf` (CSV-Import),
-  `0b2add809501` (Wirtschaftsplan: `budget_entries`).
+  `0b2add809501` (Wirtschaftsplan: `budget_entries`),
+  `5fd0b12998a5` (`billing_periods.compute_next_advance`, `.inflation_rate`).
 
 ---
 
@@ -354,7 +364,8 @@ Liste, Vorlage `transactions/pdf.html`).
 | `test_period_workflow.py` | Abschluss-Sperre; Salden aus Vorperiode |
 | `test_budget.py` | Wirtschaftsplan + Jahresvergleich: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Saldo/Summen, Speichern/Zurücksetzen, Differenzen zweier Perioden (Service + Routen) |
 | `test_transfer.py` | Umbuchung zwischen Konten (zwei Beine, Auto-Kostenarten) |
-| `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF" |
+| `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF"; künftiger Abschlag nur bei gesetztem Flag |
+| `test_advance.py` | `compute_next_advance` (Beispiel aus der Anforderung, Inflation, Guthaben, Euro-Rundung) |
 | `test_transactions.py` | CRUD, Filter, Ledger, Buchungsliste als PDF |
 | `test_transactions.py` / `test_crud.py` / `test_smoke.py` | CRUD, Filter (auch leere Query-Parameter), Auth |
 
