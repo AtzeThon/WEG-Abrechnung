@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, selectinload
 from app import auth
 from app.database import get_db
 from app.models import Account, CostType, Owner, Transaction
+from app.services.billing import account_balance_before
 from app.services.periods import locked_period_for_date
 from app.services.transfers import record_transfer
 from app.templating import templates
@@ -344,20 +345,39 @@ def transactions_delete(request: Request, txn_id: int, db: Session = Depends(get
 
 
 @router.get("/kontoauszug/{account_id}", response_class=HTMLResponse, name="account_ledger")
-def account_ledger(request: Request, account_id: int, db: Session = Depends(get_db)):
+def account_ledger(
+    request: Request,
+    account_id: int,
+    db: Session = Depends(get_db),
+    date_from: str | None = None,
+    date_to: str | None = None,
+):
     account = db.get(Account, account_id)
     if account is None:
         flash(request, "Konto nicht gefunden.", "error")
         return RedirectResponse(request.url_for("accounts_list"), status_code=status.HTTP_303_SEE_OTHER)
-    rows = list(
-        db.scalars(
-            select(Transaction)
-            .options(selectinload(Transaction.cost_type), selectinload(Transaction.owner))
-            .where(Transaction.account_id == account_id)
-            .order_by(Transaction.booking_date, Transaction.id)
-        )
-    )
-    running = account.opening_balance
+
+    d_from = parse_date(date_from)
+    d_to = parse_date(date_to)
+
+    stmt = select(Transaction).options(
+        selectinload(Transaction.cost_type), selectinload(Transaction.owner)
+    ).where(Transaction.account_id == account_id)
+    if d_from:
+        stmt = stmt.where(Transaction.booking_date >= d_from)
+    if d_to:
+        stmt = stmt.where(Transaction.booking_date <= d_to)
+    stmt = stmt.order_by(Transaction.booking_date, Transaction.id)
+    rows = list(db.scalars(stmt))
+
+    if d_from:
+        opening = account_balance_before(db, account, d_from)
+        opening_date = None  # Zeile zeigt stattdessen "vor {date_from}"
+    else:
+        opening = account.opening_balance
+        opening_date = account.opening_balance_date
+
+    running = opening
     ledger = []
     for t in rows:
         running += t.amount
@@ -365,7 +385,16 @@ def account_ledger(request: Request, account_id: int, db: Session = Depends(get_
     return templates.TemplateResponse(
         request,
         "transactions/ledger.html",
-        {"account": account, "ledger": ledger, "closing": running},
+        {
+            "account": account,
+            "ledger": ledger,
+            "opening": opening,
+            "opening_date": opening_date,
+            "closing": running,
+            "date_from_d": d_from,
+            "date_to_d": d_to,
+            "filters": {"date_from": date_from or "", "date_to": date_to or ""},
+        },
     )
 
 

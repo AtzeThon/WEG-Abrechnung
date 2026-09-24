@@ -41,7 +41,10 @@ warnt, wenn sie nicht 1000 ergibt.
 
 Name, Typ (Girokonto / Rücklagenkonto), **Anfangssaldo** und Datum. Über
 **Kontoauszug** siehst du je Konto alle Buchungen mit laufendem Saldo – ideal
-zum Abgleich mit dem echten Bankauszug.
+zum Abgleich mit dem echten Bankauszug. Mit den Feldern **von/bis** lässt sich
+der Auszug auf einen Zeitraum eingrenzen; die Kopfzeile zeigt dann den **Saldo
+vor** dem Startdatum, den **Saldo zum** Enddatum und die Veränderung dazwischen
+(bei leeren Feldern: Anfangssaldo des Kontos bzw. aktueller Saldo).
 
 Der **Anfangssaldo des Rücklagenkontos** fließt in die Abrechnung ein: Solange in
 einer Abrechnungsperiode kein eigener „Rücklagen-Anfangssaldo" erfasst ist

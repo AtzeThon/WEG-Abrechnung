@@ -6,6 +6,37 @@
   <a href="{{ url_for('accounts_list') }}" class="btn-ghost">Zurück zu Konten</a>
 </div>
 
+<form method="get" class="card mb-4 flex flex-wrap items-end gap-3 text-sm">
+  <label class="block">
+    <span class="label">von</span>
+    <input type="date" name="date_from" value="{{ filters.date_from }}" class="input">
+  </label>
+  <label class="block">
+    <span class="label">bis</span>
+    <input type="date" name="date_to" value="{{ filters.date_to }}" class="input">
+  </label>
+  <button class="btn-primary">Filtern</button>
+  {% if filters.date_from or filters.date_to %}
+  <a href="{{ url_for('account_ledger', account_id=account.id) }}" class="btn-ghost border border-slate-300">Zurücksetzen</a>
+  {% endif %}
+</form>
+
+<div class="card mb-4 text-sm">
+  <div class="flex flex-wrap gap-x-8 gap-y-1">
+    <div>
+      {{ 'Saldo vor ' ~ (date_from_d | datum) if date_from_d else 'Anfangssaldo (' ~ (opening_date | datum) ~ ')' }}
+      <span class="font-semibold">{{ opening | euro }}</span>
+    </div>
+    <div>
+      {{ 'Saldo zum ' ~ (date_to_d | datum) if date_to_d else 'Endsaldo (aktuell)' }}
+      <span class="font-semibold">{{ closing | euro }}</span>
+    </div>
+    <div>Veränderung im Zeitraum
+      <span class="font-semibold {{ 'text-red-600' if closing - opening < 0 else 'text-green-700' }}">{{ (closing - opening) | euro }}</span>
+    </div>
+  </div>
+</div>
+
 <div class="card overflow-x-auto">
   <table class="w-full text-sm">
     <thead>
@@ -16,10 +47,12 @@
     </thead>
     <tbody>
       <tr class="text-slate-500">
-        <td class="td">{{ account.opening_balance_date | datum }}</td>
-        <td class="td" colspan="3">Anfangssaldo</td>
+        <td class="td">{{ opening_date | datum if opening_date else '' }}</td>
+        <td class="td" colspan="3">
+          {{ 'Saldo vor ' ~ (date_from_d | datum) if date_from_d else 'Anfangssaldo' }}
+        </td>
         <td class="td"></td>
-        <td class="td text-right">{{ account.opening_balance | euro }}</td>
+        <td class="td text-right">{{ opening | euro }}</td>
       </tr>
       {% for t, saldo in ledger %}
       <tr>
@@ -30,11 +63,13 @@
         <td class="td text-right whitespace-nowrap {{ 'text-red-600' if t.amount < 0 else 'text-green-700' }}">{{ t.amount | euro }}</td>
         <td class="td text-right whitespace-nowrap">{{ saldo | euro }}</td>
       </tr>
+      {% else %}
+      <tr><td class="td text-slate-400" colspan="6">Keine Buchungen für diese Filter.</td></tr>
       {% endfor %}
     </tbody>
     <tfoot>
       <tr class="font-medium">
-        <td class="td" colspan="5">Endsaldo</td>
+        <td class="td" colspan="5">{{ 'Saldo zum ' ~ (date_to_d | datum) if date_to_d else 'Endsaldo' }}</td>
         <td class="td text-right">{{ closing | euro }}</td>
       </tr>
     </tfoot>

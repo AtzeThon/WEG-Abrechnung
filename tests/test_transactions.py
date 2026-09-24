@@ -77,6 +77,32 @@ def test_account_ledger_running_balance(client, db_session):
     assert "50,00" in r.text
 
 
+def test_account_ledger_von_bis_filter_und_saldo(client, db_session):
+    giro, ct, _hg, _e1 = _base_data(db_session)
+    db_session.add_all([
+        Transaction(account_id=giro.id, booking_date=date(2026, 1, 1), payee="A",
+                    cost_type_id=ct.id, amount=Decimal("-30")),
+        Transaction(account_id=giro.id, booking_date=date(2026, 1, 2), payee="B",
+                    cost_type_id=ct.id, amount=Decimal("-20")),
+        Transaction(account_id=giro.id, booking_date=date(2026, 1, 10), payee="C",
+                    cost_type_id=ct.id, amount=Decimal("-5")),
+    ])
+    db_session.commit()
+
+    # Nur die zweite Buchung (02.–05.01.) -> Saldo vor dem Zeitraum = 70 (100-30),
+    # Saldo zum Ende des Zeitraums = 50 (70-20); die dritte Buchung (10.01.) fehlt.
+    r = client.get(
+        f"/buchungen/kontoauszug/{giro.id}?date_from=2026-01-02&date_to=2026-01-05"
+    )
+    assert r.status_code == 200
+    assert "-20,00" in r.text  # Buchung B (im Zeitraum)
+    assert "-30,00" not in r.text  # Buchung A (vor dem Zeitraum) fehlt
+    assert "-5,00" not in r.text   # Buchung C (nach dem Zeitraum) fehlt
+    assert "70,00" in r.text  # Saldo vor 02.01.2026
+    assert "50,00" in r.text  # Saldo zum 05.01.2026
+    assert "45,00" not in r.text  # Endsaldo über alle Buchungen wäre 45,00
+
+
 def test_transactions_pdf_route(client, db_session):
     giro, ct, _hg, _e1 = _base_data(db_session)
     db_session.add(

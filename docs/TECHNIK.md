@@ -374,7 +374,7 @@ Liste, Vorlage `transactions/pdf.html`).
 | `test_transfer.py` | Umbuchung zwischen Konten (zwei Beine, Auto-Kostenarten) |
 | `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF"; künftiger Abschlag nur bei gesetztem Flag |
 | `test_advance.py` | `compute_next_advance` (Beispiel aus der Anforderung, Inflation, Guthaben, Euro-Rundung) |
-| `test_transactions.py` | CRUD, Filter, Ledger, Buchungsliste als PDF |
+| `test_transactions.py` | CRUD, Filter, Ledger (inkl. von/bis-Zeitraum + Saldo-Anzeige), Buchungsliste als PDF |
 | `test_transactions.py` / `test_crud.py` / `test_smoke.py` | CRUD, Filter (auch leere Query-Parameter), Auth |
 
 `tests/conftest.py`: In-Memory-SQLite je Test, `client`-Fixture (offen), Fixture
