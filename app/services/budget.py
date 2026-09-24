@@ -103,6 +103,37 @@ def _sums_by_cell(db: Session, windows: list[MonthWindow]) -> dict[tuple[int, in
     return dict(acc)
 
 
+def _reserve_bewegung_by_month(db: Session, windows: list[MonthWindow]) -> dict[int, Decimal]:
+    """Monatsindex -> Netto-Zufluss auf die Girokonten aus Rücklagen-Umbuchungen.
+
+    Zählt nur die neutrale Gegenbuchung (``kind == UMBUCHUNG``), kontoübergreifend:
+    bei einer reinen Umbuchung zwischen zwei Girokonten heben sich beide Beine
+    (je einmal ``UMBUCHUNG``) exakt auf; bei einer Rücklagen-Umbuchung bleibt nur
+    das Girokonto-Bein übrig – das Rücklagenkonto-Bein (``kind == RUECKLAGE``)
+    wird bewusst nicht gezählt, da es kein Girokonto betrifft.
+    """
+    if not windows:
+        return {}
+    overall_start = min(w.start for w in windows)
+    overall_end = max(w.end for w in windows)
+    rows = db.execute(
+        select(Transaction.booking_date, Transaction.amount)
+        .join(CostType, Transaction.cost_type_id == CostType.id)
+        .where(
+            CostType.kind == CostKind.UMBUCHUNG,
+            Transaction.booking_date >= overall_start,
+            Transaction.booking_date <= overall_end,
+        )
+    ).all()
+    acc: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    for bdate, amount in rows:
+        mi = _window_index(windows, bdate)
+        if mi is None:
+            continue
+        acc[mi] += amount
+    return dict(acc)
+
+
 # --------------------------------------------------------------------------- #
 # Grid
 # --------------------------------------------------------------------------- #
@@ -158,6 +189,7 @@ class BudgetMonth:
     is_past: bool = False
     einnahmen: Decimal = ZERO
     ausgaben: Decimal = ZERO
+    reserve_bewegung: Decimal = ZERO  # Netto-Umbuchung mit dem Rücklagenkonto
     differenz: Decimal = ZERO
     saldo: Decimal = ZERO
 
@@ -173,6 +205,7 @@ class BudgetGrid:
     totals: dict[int, Decimal] = field(default_factory=dict)
     total_einnahmen: Decimal = ZERO
     total_ausgaben: Decimal = ZERO
+    total_reserve_bewegung: Decimal = ZERO
     total_differenz: Decimal = ZERO
     previous_period_label: str | None = None
 
@@ -212,11 +245,13 @@ def build_grid(
         (e.month_index, e.cost_type_id): e.amount
         for e in db.scalars(select(BudgetEntry).where(BudgetEntry.period_id == period.id))
     }
+    reserve_bewegung_by_month = _reserve_bewegung_by_month(db, windows)
 
     anfangssaldo, anfangssaldo_source = _giro_opening(db, period)
 
     months: list[BudgetMonth] = []
     totals: dict[int, Decimal] = {c.id: ZERO for c in col_types}
+    total_reserve_bewegung = ZERO
     running = anfangssaldo
     for w in windows:
         past = w.end < today
@@ -233,14 +268,17 @@ def build_grid(
         }
         einnahmen = sum((cells[c.id].effective for c in income_types), ZERO)
         ausgaben = sum((cells[c.id].effective for c in expense_types), ZERO)
-        differenz = einnahmen - ausgaben
+        reserve_bewegung = reserve_bewegung_by_month.get(w.index, ZERO)
+        differenz = einnahmen - ausgaben + reserve_bewegung
         running += differenz
+        total_reserve_bewegung += reserve_bewegung
         for c in col_types:
             totals[c.id] += cells[c.id].effective
         months.append(
             BudgetMonth(
                 index=w.index, label=w.label, start=w.start, end=w.end, cells=cells,
                 is_past=past, einnahmen=einnahmen, ausgaben=ausgaben,
+                reserve_bewegung=reserve_bewegung,
                 differenz=differenz, saldo=running,
             )
         )
@@ -257,7 +295,8 @@ def build_grid(
         totals=totals,
         total_einnahmen=total_einnahmen,
         total_ausgaben=total_ausgaben,
-        total_differenz=total_einnahmen - total_ausgaben,
+        total_reserve_bewegung=total_reserve_bewegung,
+        total_differenz=total_einnahmen - total_ausgaben + total_reserve_bewegung,
         previous_period_label=prev.label if prev is not None else None,
     )
 
@@ -327,6 +366,7 @@ class CompareMonth:
     label: str
     einnahmen: DiffPair
     ausgaben: DiffPair
+    reserve_bewegung: DiffPair
     differenz: DiffPair
     cells: dict[int, DiffPair]
 
@@ -341,6 +381,7 @@ class CompareGrid:
     totals: dict[int, DiffPair]
     total_einnahmen: DiffPair
     total_ausgaben: DiffPair
+    total_reserve_bewegung: DiffPair
     total_differenz: DiffPair
     anfangssaldo: DiffPair
 
@@ -383,6 +424,9 @@ def build_comparison(
                 label=(ma or mb).label,
                 einnahmen=DiffPair(ma.einnahmen if ma else ZERO, mb.einnahmen if mb else ZERO),
                 ausgaben=DiffPair(ma.ausgaben if ma else ZERO, mb.ausgaben if mb else ZERO),
+                reserve_bewegung=DiffPair(
+                    ma.reserve_bewegung if ma else ZERO, mb.reserve_bewegung if mb else ZERO
+                ),
                 differenz=DiffPair(ma.differenz if ma else ZERO, mb.differenz if mb else ZERO),
                 cells={c.id: DiffPair(_cell(ma, c.id), _cell(mb, c.id)) for c in col_types},
             )
@@ -400,6 +444,7 @@ def build_comparison(
         },
         total_einnahmen=DiffPair(ga.total_einnahmen, gb.total_einnahmen),
         total_ausgaben=DiffPair(ga.total_ausgaben, gb.total_ausgaben),
+        total_reserve_bewegung=DiffPair(ga.total_reserve_bewegung, gb.total_reserve_bewegung),
         total_differenz=DiffPair(ga.total_differenz, gb.total_differenz),
         anfangssaldo=DiffPair(ga.anfangssaldo, gb.anfangssaldo),
     )

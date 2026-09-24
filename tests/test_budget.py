@@ -121,6 +121,67 @@ def test_laufender_saldo_und_summen(db_session, data):
     assert grid.total_ausgaben == sum(m.ausgaben for m in grid.months)
 
 
+def test_reserve_entnahme_erhoeht_saldo_im_wirtschaftsplan(db_session, data):
+    from app.services.transfers import record_transfer
+
+    cur, giro, ruecklage = data["cur"], data["giro"], data["ruecklage"]
+    # Entnahme aus der Rücklage im 6. Monat (Januar 2026, Index 5) -> Geld fließt
+    # aufs Girokonto und muss den Wirtschaftsplan-Saldo entsprechend anheben.
+    record_transfer(
+        db_session, from_account_id=ruecklage.id, to_account_id=giro.id,
+        amount=Decimal("1000.00"), booking_date=date(2026, 1, 15), owner_id=None, note="",
+    )
+    db_session.commit()
+
+    grid = budget.build_grid(db_session, cur, today=PLAN_TODAY)
+    m5 = grid.months[5]
+    assert m5.label.startswith("Januar")
+    assert m5.reserve_bewegung == Decimal("1000.00")
+    assert m5.differenz == m5.einnahmen - m5.ausgaben + Decimal("1000.00")
+    assert grid.total_reserve_bewegung == Decimal("1000.00")
+
+    # Laufender Saldo berücksichtigt die Entnahme ab diesem Monat.
+    running = grid.anfangssaldo
+    for m in grid.months:
+        running += m.differenz
+        assert m.saldo == running
+
+
+def test_reserve_zufuehrung_senkt_saldo_im_wirtschaftsplan(db_session, data):
+    from app.services.transfers import record_transfer
+
+    cur, giro, ruecklage = data["cur"], data["giro"], data["ruecklage"]
+    record_transfer(
+        db_session, from_account_id=giro.id, to_account_id=ruecklage.id,
+        amount=Decimal("500.00"), booking_date=date(2025, 9, 10), owner_id=None, note="",
+    )
+    db_session.commit()
+
+    grid = budget.build_grid(db_session, cur, today=PLAN_TODAY)
+    assert grid.months[1].reserve_bewegung == Decimal("-500.00")
+
+
+def test_giro_zu_giro_umbuchung_bleibt_neutral_im_wirtschaftsplan(db_session, data):
+    from app.services.transfers import record_transfer
+
+    cur, giro = data["cur"], data["giro"]
+    giro2 = Account(name="Zweitkonto", type=AccountType.GIRO, opening_balance=Decimal("0"))
+    db_session.add(giro2)
+    db_session.commit()
+
+    record_transfer(
+        db_session, from_account_id=giro.id, to_account_id=giro2.id,
+        amount=Decimal("300.00"), booking_date=date(2025, 9, 10), owner_id=None, note="",
+    )
+    db_session.commit()
+
+    grid = budget.build_grid(db_session, cur, today=PLAN_TODAY)
+    # Beide Beine sind vom Typ „Umbuchung (neutral)" und heben sich kontoüber-
+    # greifend auf – eine reine Girokonto-zu-Girokonto-Verschiebung darf den
+    # Wirtschaftsplan nicht verändern.
+    assert grid.months[1].reserve_bewegung == Decimal("0")
+
+
 def test_erstattung_zaehlt_zu_den_einnahmen(db_session, data):
     cur = data["cur"]
     erst = CostType(name="Erstattung/Nachzahlung", kind=CostKind.ERSTATTUNG, sort_order=9)
@@ -319,6 +380,24 @@ def test_budget_index_leitet_bei_einer_periode_weiter(client, db_session):
 # --------------------------------------------------------------------------- #
 # Jahresvergleich
 # --------------------------------------------------------------------------- #
+def test_build_comparison_beruecksichtigt_reserve_bewegung(db_session, data):
+    from app.services.transfers import record_transfer
+
+    cur, prev, giro, ruecklage = data["cur"], data["prev"], data["giro"], data["ruecklage"]
+    record_transfer(
+        db_session, from_account_id=ruecklage.id, to_account_id=giro.id,
+        amount=Decimal("1000.00"), booking_date=date(2025, 8, 20), owner_id=None, note="",
+    )
+    db_session.commit()
+
+    grid = budget.build_comparison(db_session, cur, prev, today=PLAN_TODAY)
+    m0 = grid.months[0]
+    assert m0.reserve_bewegung.a == Decimal("1000.00")
+    assert m0.reserve_bewegung.b == Decimal("0.00")
+    assert m0.differenz.a - m0.differenz.b == m0.differenz.diff  # DiffPair konsistent
+    assert grid.total_reserve_bewegung.diff == Decimal("1000.00")
+
+
 def test_build_comparison_differenzen(db_session, data):
     cur, prev, gas, garten = data["cur"], data["prev"], data["gas"], data["garten"]
 

@@ -244,6 +244,15 @@ Reiner Aufbau eines Monats-Rasters je Periode; ändert keine Buchungen.
     (Default `date.today()`).
   - **Anfangssaldo** = Σ `account_balance_before(db, konto, start_date)` über
     alle Konten mit `type == GIRO`. Laufender Saldo = Vormonatssaldo + Differenz.
+  - **Rücklagenbewegung** (`BudgetMonth.reserve_bewegung`,
+    `_reserve_bewegung_by_month()`): Σ `amount` aller Buchungen mit
+    `kind == UMBUCHUNG` im Monat, kontoübergreifend – nicht `_signed()`, da sich
+    bei einer reinen Girokonto-zu-Girokonto-Umbuchung beide Beine (je
+    `UMBUCHUNG`) exakt aufheben; bei einer Rücklagen-Umbuchung bleibt nur das
+    Girokonto-Bein übrig. Das Rücklagenkonto-Bein (`kind == RUECKLAGE`) wird
+    bewusst **nicht** gezählt (kein Girokonto). `differenz = einnahmen −
+    ausgaben + reserve_bewegung`; kein Vorschlag/manueller Override dafür (reine
+    Ist-Anzeige, wie „Saldo"/„Einnahmen"/„Ausgaben").
 - `save_overrides(db, period, {(month_index, cost_type_id): Decimal|None})` –
   Upsert nur bei Abweichung vom Default (`ist ?? vorschlag ?? 0`); leerer/gleicher
   Wert löscht einen vorhandenen `BudgetEntry`.
@@ -264,8 +273,9 @@ Raster (Tausendertrenner, zwei Nachkommastellen, kein €-Symbol).
 **Jahresvergleich** (`services/budget.py::build_comparison`, `routers/compare.py`,
 Prefix `/jahresvergleich`, in `_register_routers` als `"compare"`): baut für
 zwei Perioden je `build_grid()` und stellt sie Monatsindex ↔ Monatsindex und
-Kostenart ↔ Kostenart gegenüber. Dataclasses `DiffPair(a, b)` mit `.diff`,
-`CompareMonth`, `CompareGrid`. Kostenarten sind die Vereinigung beider Grids.
+Kostenart ↔ Kostenart gegenüber (inkl. `reserve_bewegung` als `DiffPair`).
+Dataclasses `DiffPair(a, b)` mit `.diff`, `CompareMonth`, `CompareGrid`.
+Kostenarten sind die Vereinigung beider Grids.
 Ansicht (`budget/compare.html`, `_compare_grid.html`) wie der Wirtschaftsplan,
 aber **ohne Saldo-Spalte**, Zellen zeigen `a − b`. Parameter `?jahr=` (Default:
 jüngste Periode) und `?vergleich=` (Default: `previous_period`). PDF wie beim
@@ -370,7 +380,7 @@ Liste, Vorlage `transactions/pdf.html`).
 | `test_csv_parser.py` | `sniff` / `detect_mapping` / `parse_rows` gegen Fixtures (`tests/fixtures/bank_csv/`) |
 | `test_imports_flow.py` | Upload → Mapping → Prüfen → Buchen; Duplikat-Zweitimport; Historien-Vorschlag; Kategorie-/Eigentümer-Spalte |
 | `test_period_workflow.py` | Abschluss-Sperre; Salden aus Vorperiode |
-| `test_budget.py` | Wirtschaftsplan + Jahresvergleich: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Saldo/Summen, Speichern/Zurücksetzen, Differenzen zweier Perioden (Service + Routen) |
+| `test_budget.py` | Wirtschaftsplan + Jahresvergleich: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Rücklagenbewegung (Entnahme/Zuführung/Girokonto-neutral), Saldo/Summen, Speichern/Zurücksetzen, Differenzen zweier Perioden (Service + Routen) |
 | `test_transfer.py` | Umbuchung zwischen Konten (zwei Beine, Auto-Kostenarten) |
 | `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF"; künftiger Abschlag nur bei gesetztem Flag |
 | `test_advance.py` | `compute_next_advance` (Beispiel aus der Anforderung, Inflation, Guthaben, Euro-Rundung) |

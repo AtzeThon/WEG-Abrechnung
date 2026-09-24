@@ -236,10 +236,11 @@ Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen i
 - Eine Zeile je Kalendermonat der Periode, dazu die Zeilen *Anfangssaldo* und
   *Summe*.
 - Spalten von links nach rechts: **Monat**, **Saldo** (Vormonatssaldo +
-  Differenz), **Einnahmen**, **Ausgaben gesamt**, **Differenz** (Einnahmen −
-  Ausgaben), danach je Einnahme-Kostenart (Typ *Hausgeld*, *Sonderumlage*,
-  *Erstattung/Nachzahlung*) und je Ausgabe-Kostenart (Typ *Betriebskosten*,
-  *Investition*) ein Eingabefeld.
+  Differenz), **Einnahmen**, **Ausgaben gesamt**, **Rücklagenbewegung**,
+  **Differenz** (Einnahmen − Ausgaben + Rücklagenbewegung), danach je
+  Einnahme-Kostenart (Typ *Hausgeld*, *Sonderumlage*, *Erstattung/Nachzahlung*)
+  und je Ausgabe-Kostenart (Typ *Betriebskosten*, *Investition*) ein
+  Eingabefeld.
 - Neue Kostenarten erscheinen automatisch als zusätzliche Spalte.
 - Über den Spaltenköpfen fassen die Gruppen­überschriften **Gesamt**,
   **Einnahmen** und **Ausgaben** die jeweiligen Spalten zusammen.
@@ -247,6 +248,12 @@ Buchungen und ist unabhängig davon, ob die Periode Entwurf oder abgeschlossen i
   Eigentümers ist ein Geldzufluss (positiv), eine Erstattung an ihn ein Abfluss
   (negativ). Auf die *Differenz* und den *Saldo* wirkt sich das nicht aus – nur
   auf die Aufteilung Einnahmen / Ausgaben.
+- **Rücklagenbewegung**: eine Umbuchung zwischen Girokonto und Rücklagenkonto
+  (6.3) verändert den tatsächlichen Kontostand der Girokonten und wird hier als
+  eigene Spalte ausgewiesen – eine Entnahme aus der Rücklage erhöht die Spalte
+  (und damit Differenz/Saldo), eine Zuführung senkt sie. Die Spalte ist reine
+  Anzeige (nicht editierbar); eine Umbuchung **zwischen zwei Girokonten** taucht
+  hier **nicht** auf, da sie den Gesamtstand der Girokonten nicht verändert.
 
 **Woher die Werte kommen** – je Zelle in dieser Reihenfolge:
 
@@ -293,7 +300,8 @@ Wirtschaftsjahre gegenüber. Zwei Auswahlfelder:
 
 Über der Kopftabelle stehen die Gesamtwerte beider Jahre (Anfangssaldo,
 Einnahmen, Ausgaben, Differenz) samt Differenz. Das Monatsraster ist wie beim
-Wirtschaftsplan aufgebaut – **ohne die Spalte *Saldo***. In jeder Zelle steht
+Wirtschaftsplan aufgebaut (inkl. Spalte *Rücklagenbewegung*) – **ohne die
+Spalte *Saldo***. In jeder Zelle steht
 die **Differenz** *Wirtschaftsjahr − Vergleichswirtschaftsjahr* (die beiden
 Einzelwerte erscheinen im Tooltip). Negative Differenzen sind rot. Auch hier
 gibt es einen **PDF**-Export im Querformat.
