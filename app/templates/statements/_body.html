@@ -120,6 +120,11 @@
         <tr><td class="td">Anteil investive Ausgaben</td><td class="td text-right">./. {{ owner.investition_share | euro }}</td></tr>
         <tr><td class="td">{{ 'Guthaben' if owner.guthaben >= 0 else 'Nachzahlung' }} {{ year }}</td>
             <td class="td text-right">{{ owner.guthaben | euro }}</td></tr>
+        {% set reserve_move = owner.reserve_entnahme - owner.reserve_zufuehrung %}
+        {% if reserve_move != 0 %}
+        <tr><td class="td">{{ 'Entnahme aus der Rücklage' if reserve_move > 0 else 'Zuführung zur Rücklage' }}</td>
+            <td class="td text-right">{{ money(reserve_move) }}</td></tr>
+        {% endif %}
         <tr class="font-semibold border-t-2 border-slate-300">
           <td class="td">Endsaldo Hausgeld</td><td class="td text-right">{{ money(owner.hausgeld_endsaldo) }}</td>
         </tr>

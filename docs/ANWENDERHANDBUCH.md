@@ -185,7 +185,8 @@ Die Perioden-Übersicht (`Abrechnungen → Bezeichnung`) zeigt:
 - **Kostenübersicht** – Matrix *Kostenart × Eigentümer*, gruppiert nach Kategorie,
   mit WEG-Gesamtbetrag und Anteil je Eigentümer. Summenzeile = *Kostenanteil*.
 - **Hausgeldübersicht** – je Eigentümer: Saldovortrag, Sonderumlage, ./. Investition,
-  Hausgeld gezahlt, ./. Kostenanteil, Guthaben/Nachzahlung, **Endsaldo Hausgeld**.
+  Hausgeld gezahlt, ./. Kostenanteil, Guthaben/Nachzahlung, **Rücklagenbewegung**
+  (Entnahme aus bzw. Zuführung zur Rücklage – siehe 6.3), **Endsaldo Hausgeld**.
 - **Rücklagenübersicht** – Anfangssaldo (nach MEA), Zuführung, Entnahme, **Endsaldo Rücklage**.
 - **Saldo gesamt je Eigentümer** = Endsaldo Hausgeld + Endsaldo Rücklage.
 
@@ -338,7 +339,9 @@ optional ein Eigentümer, Notiz. Die App legt automatisch **zwei Buchungen** an:
 Ohne Eigentümer wird die Umbuchung nach MEA auf alle verteilt; mit Eigentümer
 wirkt sie nur bei diesem. Der **Saldo gesamt** je Eigentümer bleibt bei einer
 reinen Umbuchung **unverändert** – es wird nur zwischen den beiden Konten
-verschoben.
+verschoben. Nachvollziehbar wird das über die Spalte **Rücklagenbewegung** in
+der Hausgeldübersicht (5.2) bzw. die Zeile „Entnahme aus der Rücklage" /
+„Zuführung zur Rücklage" im Hausgeldkonto-Block der Einzelabrechnung (5.3).
 
 > Du kannst dieselben zwei Buchungen auch von Hand anlegen (eine Kostenart Typ
 > *Rücklage* auf dem Rücklagenkonto, eine Kostenart Typ *Umbuchung* auf dem

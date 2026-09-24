@@ -91,12 +91,14 @@
         <th class="th text-right">Hausgeld gezahlt</th>
         <th class="th text-right">./. Kostenanteil</th>
         <th class="th text-right">Guthaben / Nachzahlung</th>
+        <th class="th text-right">Rücklagenbewegung</th>
         <th class="th text-right">Endsaldo Hausgeld</th>
       </tr>
     </thead>
     <tbody>
       {% for code in codes %}
       {% set r = result.owner_result(code) %}
+      {% set reserve_move = r.reserve_entnahme - r.reserve_zufuehrung %}
       <tr>
         <td class="td font-medium">{{ code }}</td>
         <td class="td text-right">{{ r.carryover | euro }}</td>
@@ -105,6 +107,10 @@
         <td class="td text-right">{{ r.hausgeld_paid | euro }}</td>
         <td class="td text-right">{{ r.cost_share_total | euro }}</td>
         <td class="td text-right {{ 'text-red-600' if r.guthaben < 0 else 'text-green-700' }}">{{ r.guthaben | euro }}</td>
+        <td class="td text-right {{ 'text-slate-400' if reserve_move == 0 }}"
+            title="{{ 'Entnahme aus der Rücklage' if reserve_move > 0 else ('Zuführung zur Rücklage' if reserve_move < 0 else '') }}">
+          {{ money(reserve_move) }}
+        </td>
         <td class="td text-right font-medium">{{ money(r.hausgeld_endsaldo) }}</td>
       </tr>
       {% endfor %}
@@ -119,9 +125,15 @@
         <td class="td text-right">{{ result.cost_share_total | euro }}</td>
         <td class="td"></td>
         <td class="td"></td>
+        <td class="td"></td>
       </tr>
     </tfoot>
   </table>
+  <p class="text-xs text-slate-400 mt-2">
+    Rücklagenbewegung: eine Entnahme aus der Rücklage erhöht den Endsaldo Hausgeld
+    (positiv), eine Zuführung senkt ihn (negativ) – Details siehe Rücklagenübersicht
+    unten.
+  </p>
 </section>
 
 <!-- Rücklage + Saldo gesamt -->

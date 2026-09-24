@@ -120,6 +120,14 @@ Strings, damit die Engine nicht von den ORM-Enums abhängt.
 **Bewusst nicht umgesetzt:** Erstattung/Nachzahlung fließt nicht in den Endsaldo
 (Feld/Typ existieren, Betrag wird 0 gesetzt).
 
+`OwnerBillingResult.reserve_zufuehrung`/`.reserve_entnahme` (Schritt 6/7) werden
+zusätzlich zur Rücklagenübersicht auch in der **Hausgeldübersicht**
+(`periods/overview.html`, Spalte „Rücklagenbewegung“ = `entnahme − zufuehrung`)
+und im **Hausgeldkonto**-Block der Einzelabrechnung (`statements/_body.html`,
+Zeile „Entnahme aus der Rücklage“/„Zuführung zur Rücklage“, nur wenn ≠ 0)
+angezeigt – sonst ist der Sprung von „Guthaben/Nachzahlung“ zu „Endsaldo
+Hausgeld“ bei einer Rücklagen-Umbuchung nicht nachvollziehbar.
+
 ### Umlageschlüssel-Strategien (`strategies.py`)
 
 Registry über `@register("name")`; `AllocationContext` liefert `actual_total`,

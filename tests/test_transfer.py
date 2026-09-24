@@ -75,6 +75,23 @@ def test_neutrale_buchung_wird_von_der_engine_ignoriert():
     assert res.owner_result("E1").total_saldo == Decimal("0")
 
 
+def test_rueclagenbewegung_sichtbar_in_uebersicht_und_einzelabrechnung(client, db_session, konten):
+    # Entnahme aus der Rücklage (ohne Eigentümer -> nach MEA verteilt)
+    record_transfer(
+        db_session, from_account_id=konten["ruecklage"].id, to_account_id=konten["giro"].id,
+        amount=Decimal("500"), booking_date=date(2026, 6, 1), owner_id=None, note="",
+    )
+    db_session.commit()
+
+    r = client.get(f"/abrechnungen/{konten['p'].id}")
+    assert "Rücklagenbewegung" in r.text
+    assert "300,00" in r.text  # E1-Anteil (60 % von 500)
+
+    r = client.get(f"/abrechnungen/{konten['p'].id}/eigentuemer/E1")
+    assert "Entnahme aus der Rücklage" in r.text
+    assert "300,00" in r.text
+
+
 def test_umbuchung_route(client, db_session, konten):
     r = client.post("/buchungen/umbuchung", data={
         "from_account_id": konten["ruecklage"].id, "to_account_id": konten["giro"].id,
