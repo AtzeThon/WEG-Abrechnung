@@ -9,7 +9,7 @@
       class="card max-w-lg space-y-4">
   {{ field('name', 'Name', account.name if account else '', required=True) }}
   {{ select('type', 'Typ', type_options, account.type.value if account else 'giro', required=True) }}
-  {{ field('opening_balance', 'Anfangssaldo', (account.opening_balance | dezimal) if account else '0,00') }}
+  {{ field('opening_balance', 'Anfangssaldo', (account.opening_balance | eingabe) if account else '0,00') }}
   {{ field('opening_balance_date', 'Anfangssaldo per', (account.opening_balance_date | datum) if account and account.opening_balance_date else '', hint='TT.MM.JJJJ') }}
   {{ checkbox('active', 'Aktiv', account.active if account else True) }}
   <div class="flex gap-2 pt-2">

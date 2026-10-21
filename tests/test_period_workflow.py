@@ -120,3 +120,31 @@ def test_salden_aus_vorperiode_uebernehmen(client, db_session, data):
     # E1 hat 300 Hausgeld gezahlt, Kostenanteil 100 (halbe 200) -> Guthaben 200 -> Endsaldo 200
     assert obs[data["e1"].id] == Decimal("200.00")
     assert obs[data["e2"].id] == Decimal("-100.00")  # kein Hausgeld, Kostenanteil 100
+
+
+def test_periodenformular_roundtrip_verfaelscht_tausenderbetraege_nicht(client, db_session, data):
+    """Ein Betrag wie 3550 darf beim Öffnen und Speichern nicht zu 3,55 werden."""
+    import re
+
+    p, e1 = data["p"], data["e1"]
+    p.reserve_opening_balance = Decimal("3550.00")
+    ob = db_session.scalar(
+        select(PeriodOpeningBalance).where(
+            PeriodOpeningBalance.period_id == p.id, PeriodOpeningBalance.owner_id == e1.id
+        )
+    )
+    ob.hausgeld_carryover = Decimal("1170.00")
+    db_session.commit()
+
+    html = client.get(f"/abrechnungen/{p.id}/bearbeiten").text
+    form = {
+        m.group(1): m.group(2)
+        for m in re.finditer(r'name="([^"]+)"[^>]*value="([^"]*)"', html)
+    }
+    assert form["reserve_opening_balance"] == "3550,00"
+    assert form[f"carryover_{e1.id}"] == "1170,00"
+
+    client.post(f"/abrechnungen/{p.id}", data=form, follow_redirects=False)
+    db_session.expire_all()
+    assert db_session.get(BillingPeriod, p.id).reserve_opening_balance == Decimal("3550.00")
+    assert db_session.get(PeriodOpeningBalance, ob.id).hausgeld_carryover == Decimal("1170.00")

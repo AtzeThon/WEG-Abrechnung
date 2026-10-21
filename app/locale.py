@@ -34,6 +34,17 @@ def dezimal(value, digits: int = 2) -> str:
     return format_decimal(d.quantize(q, rounding=ROUND_HALF_UP), locale=LOCALE)
 
 
+def eingabe(value, digits: int = 2) -> str:
+    """Wert für Formularfelder: ohne Tausenderpunkt, mind. zwei Nachkommastellen ('3550,00').
+
+    Ein Tausenderpunkt wäre beim Zurücklesen mehrdeutig (``3.550`` liest
+    ``parse_german_decimal`` als 3,55), deshalb nie ``dezimal`` in Eingabefeldern.
+    """
+    d = _to_decimal(value)
+    d = d.quantize(Decimal(1).scaleb(-digits), rounding=ROUND_HALF_UP)
+    return format_decimal(d, format="0.00" + "#" * max(digits - 2, 0), locale=LOCALE)
+
+
 def betrag(value) -> str:
     """Betrag mit genau zwei Nachkommastellen, ohne Tausendertrenner ('782,90')."""
     d = _to_decimal(value).quantize(_CENT, rounding=ROUND_HALF_UP)
@@ -70,6 +81,7 @@ def quantize_cent(value) -> Decimal:
 def register_filters(env) -> None:
     env.filters["euro"] = euro
     env.filters["dezimal"] = dezimal
+    env.filters["eingabe"] = eingabe
     env.filters["betrag"] = betrag
     env.filters["geld"] = geld
     env.filters["prozent"] = prozent

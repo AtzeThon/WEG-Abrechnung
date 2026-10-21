@@ -49,7 +49,7 @@
         {% endfor %}
       </select>
     </label>
-    {{ field('amount', 'Betrag (€)', (txn.amount | dezimal) if txn else '', required=True,
+    {{ field('amount', 'Betrag (€)', (txn.amount | eingabe) if txn else '', required=True,
              hint='Einzahlung positiv, Ausgabe negativ') }}
   </div>
 

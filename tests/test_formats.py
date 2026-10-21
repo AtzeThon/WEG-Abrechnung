@@ -67,3 +67,20 @@ def test_web_wrapper_kompatibel():
     assert parse_decimal("") == Decimal("0")  # Default bleibt 0
     assert parse_decimal("1.234,56") == Decimal("1234.56")
     assert parse_date("15.03.2026") == date(2026, 3, 15)
+
+
+@pytest.mark.parametrize("value", ["3550", "1170.00", "1000000", "0.5", "-3550.25", "12.3456"])
+def test_eingabe_filter_ist_rueckwaerts_lesbar(value):
+    from app.locale import eingabe
+
+    d = Decimal(value)
+    assert parse_german_decimal(eingabe(d, 4)) == d
+    assert "." not in eingabe(d)
+
+
+def test_eingabe_filter_format():
+    from app.locale import eingabe
+
+    assert eingabe(Decimal("3550")) == "3550,00"
+    assert eingabe(Decimal("250"), 4) == "250,00"
+    assert eingabe(Decimal("250.125"), 4) == "250,125"

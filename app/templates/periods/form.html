@@ -18,7 +18,7 @@
       {{ field('end_date', 'Zeitraum bis', (period.end_date | datum) if period else '', required=True, hint='TT.MM.JJJJ') }}
     </div>
     {{ field('reserve_opening_balance', 'Rücklagen-Anfangssaldo (gesamt)',
-             (period.reserve_opening_balance | dezimal) if period else '0,00') }}
+             (period.reserve_opening_balance | eingabe) if period else '0,00') }}
     <p class="text-xs text-slate-400 -mt-2">
       Wird anteilig nach MEA verteilt.
       {% if reserve_account_name %}
@@ -44,7 +44,7 @@
       <label class="block max-w-[12rem]">
         <span class="label">Inflationsrate (%)</span>
         <input class="input text-right" name="inflation_rate" inputmode="decimal"
-               value="{{ (period.inflation_rate | dezimal) if period else '0,00' }}">
+               value="{{ (period.inflation_rate | eingabe) if period else '0,00' }}">
       </label>
     </div>
   </div>
@@ -72,7 +72,7 @@
       <label class="block">
         <span class="label">{{ o.code }} {{ o.name }}</span>
         <input class="input text-right" name="carryover_{{ o.id }}"
-               value="{{ carryover.get(o.id, 0) | dezimal }}">
+               value="{{ carryover.get(o.id, 0) | eingabe }}">
       </label>
       {% endfor %}
     </div>
@@ -96,7 +96,7 @@
             {% set ov = overrides.get((ct.id, o.id)) %}
             <td class="td">
               <input class="input text-right w-28" name="override_{{ ct.id }}_{{ o.id }}"
-                     value="{{ ov | dezimal if ov is not none else '' }}">
+                     value="{{ ov | eingabe if ov is not none else '' }}">
             </td>
             {% endfor %}
           </tr>

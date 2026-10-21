@@ -10,7 +10,7 @@
   {{ field('code', 'Kürzel', owner.code if owner else '', required=True, hint='z. B. E1') }}
   {{ field('name', 'Name', owner.name if owner else '') }}
   {{ field('email', 'E-Mail', owner.email if owner else '', type='email') }}
-  {{ field('mea', 'Miteigentumsanteil (MEA)', (owner.mea | dezimal(4)) if owner else '', required=True,
+  {{ field('mea', 'Miteigentumsanteil (MEA)', (owner.mea | eingabe(4)) if owner else '', required=True,
            hint='Anteilspunkte, Summe aller Eigentümer = 1000') }}
   {{ checkbox('active', 'Aktiv', owner.active if owner else True) }}
   <div class="flex gap-2 pt-2">
