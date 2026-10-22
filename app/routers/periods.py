@@ -67,6 +67,7 @@ def periods_create(
     reserve_opening_balance: str = Form("0"),
     compute_next_advance: str = Form(None),
     inflation_rate: str = Form("0"),
+    include_refunds: str = Form(None),
     db: Session = Depends(get_db),
 ):
     period = BillingPeriod(
@@ -76,6 +77,7 @@ def periods_create(
         reserve_opening_balance=parse_decimal(reserve_opening_balance),
         compute_next_advance=bool(compute_next_advance),
         inflation_rate=parse_decimal(inflation_rate),
+        include_refunds=bool(include_refunds),
         status=PeriodStatus.DRAFT,
     )
     db.add(period)
@@ -176,6 +178,7 @@ async def periods_update(request: Request, period_id: int, db: Session = Depends
     period.reserve_opening_balance = parse_decimal(form.get("reserve_opening_balance"))
     period.compute_next_advance = bool(form.get("compute_next_advance"))
     period.inflation_rate = parse_decimal(form.get("inflation_rate"))
+    period.include_refunds = bool(form.get("include_refunds"))
 
     owners = _active_owners(db)
     owner_by_id = {o.id: o for o in owners}

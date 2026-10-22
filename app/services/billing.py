@@ -75,6 +75,7 @@ def build_period_input(db: Session, period: BillingPeriod) -> PeriodInput:
         end_date=period.end_date,
         reserve_opening_balance=reserve_opening,
         hausgeld_carryover=carryover,
+        include_refunds=bool(period.include_refunds),
     )
 
 

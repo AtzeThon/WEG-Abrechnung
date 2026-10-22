@@ -12,6 +12,9 @@
       <span class="{{ 'text-green-700' if period.status.value == 'final' else 'text-amber-600' }}">
         {{ 'abgeschlossen (Buchungen gesperrt)' if period.status.value == 'final' else 'Entwurf' }}
       </span>
+      {% if period.include_refunds %}
+      · <span class="text-slate-500">Erstattung/Nachzahlung wird verrechnet</span>
+      {% endif %}
       {% if period.compute_next_advance %}
       · <span class="text-slate-500">künftiger Abschlag wird ausgewiesen{% if period.inflation_rate %}
         (+{{ period.inflation_rate | dezimal }} % Inflation){% endif %}</span>
@@ -91,6 +94,7 @@
         <th class="th text-right">Hausgeld gezahlt</th>
         <th class="th text-right">./. Kostenanteil</th>
         <th class="th text-right">Guthaben / Nachzahlung</th>
+        {% if period.include_refunds %}<th class="th text-right">Erstattung / Nachzahlung</th>{% endif %}
         <th class="th text-right">Rücklagenbewegung</th>
         <th class="th text-right">Endsaldo Hausgeld</th>
       </tr>
@@ -107,6 +111,12 @@
         <td class="td text-right">{{ r.hausgeld_paid | euro }}</td>
         <td class="td text-right">{{ r.cost_share_total | euro }}</td>
         <td class="td text-right {{ 'text-red-600' if r.guthaben < 0 else 'text-green-700' }}">{{ r.guthaben | euro }}</td>
+        {% if period.include_refunds %}
+        <td class="td text-right {{ 'text-slate-400' if r.erstattung == 0 }}"
+            title="{{ 'Nachzahlung eingegangen' if r.erstattung > 0 else ('Guthaben ausgezahlt' if r.erstattung < 0 else '') }}">
+          {{ money(r.erstattung) }}
+        </td>
+        {% endif %}
         <td class="td text-right {{ 'text-slate-400' if reserve_move == 0 }}"
             title="{{ 'Entnahme aus der Rücklage' if reserve_move > 0 else ('Zuführung zur Rücklage' if reserve_move < 0 else '') }}">
           {{ money(reserve_move) }}
@@ -124,11 +134,19 @@
         <td class="td text-right">{{ result.hausgeld_paid_total | euro }}</td>
         <td class="td text-right">{{ result.cost_share_total | euro }}</td>
         <td class="td"></td>
+        {% if period.include_refunds %}<td class="td text-right">{{ money(result.owners.values() | sum(attribute='erstattung')) }}</td>{% endif %}
         <td class="td"></td>
         <td class="td"></td>
       </tr>
     </tfoot>
   </table>
+  {% if period.include_refunds %}
+  <p class="text-xs text-slate-400 mt-2">
+    Erstattung / Nachzahlung: eingegangene Nachzahlung (positiv) erhöht den Endsaldo Hausgeld,
+    ein ausgezahltes Guthaben (negativ) senkt ihn. Grundlage sind die eigentümerbezogenen
+    Buchungen dieser Periode vom Typ „Erstattung/Nachzahlung“.
+  </p>
+  {% endif %}
   <p class="text-xs text-slate-400 mt-2">
     Rücklagenbewegung: eine Entnahme aus der Rücklage erhöht den Endsaldo Hausgeld
     (positiv), eine Zuführung senkt ihn (negativ) – Details siehe Rücklagenübersicht
@@ -200,7 +218,10 @@
   </section>
 </div>
 
+{% if not period.include_refunds %}
 <p class="text-xs text-slate-400 mt-4">
-  Erstattungen/Nachzahlungen aus der Vorperiode werden derzeit nicht in den Endsaldo eingerechnet.
+  Erstattungen/Nachzahlungen werden in dieser Periode nicht in den Endsaldo eingerechnet
+  (Einstellung „Erstattung/Nachzahlung im Endsaldo berücksichtigen“ unter „Anfangswerte / Zähler“).
 </p>
+{% endif %}
 {% endblock %}

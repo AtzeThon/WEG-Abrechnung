@@ -63,6 +63,9 @@ class PeriodInput:
     reserve_opening_balance: Decimal = ZERO
     # Saldovortrag Hausgeld je Eigentümer-Code (manuell erfasst).
     hausgeld_carryover: dict[str, Decimal] = field(default_factory=dict)
+    # Eigentümerbezogene Erstattung/Nachzahlung-Buchungen (Typ 'erstattung') im
+    # Endsaldo Hausgeld berücksichtigen. Standard: aus (abwärtskompatibel).
+    include_refunds: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -103,7 +106,7 @@ class OwnerBillingResult:
     carryover: Decimal = ZERO             # Saldovortrag (manuell)
     sonderumlage_paid: Decimal = ZERO     # eigentümerbezogene Sonderzahlungen
     investition_share: Decimal = ZERO     # Anteil an investiven Ausgaben (nach MEA)
-    erstattung: Decimal = ZERO            # aktuell immer 0 (nicht verrechnet)
+    erstattung: Decimal = ZERO            # Summe der Erstattung/Nachzahlung-Buchungen; 0, wenn Flag aus
     hausgeld_endsaldo: Decimal = ZERO
 
     # Rücklage

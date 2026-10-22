@@ -40,7 +40,7 @@ class CostKind(str, enum.Enum):
 
     BETRIEBSKOSTEN = "betriebskosten"   # umlagefähig, wird auf alle Eigentümer verteilt
     HAUSGELD = "hausgeld"               # monatliche Einzahlung des Eigentümers
-    ERSTATTUNG = "erstattung"           # Ausgleich aus Vorjahresabrechnung (aktuell nicht verrechnet)
+    ERSTATTUNG = "erstattung"           # Ausgleich aus Vorjahresabrechnung (Endsaldo nur mit Perioden-Flag)
     RUECKLAGE = "ruecklage"             # Zuführung/Entnahme Rücklage
     SONDERUMLAGE = "sonderumlage"       # eigentümerbezogene Sonderzahlung (z. B. Heizungsmodernisierung)
     INVESTITION = "investition"         # investive Ausgabe, getrennt von der laufenden Umlage geführt

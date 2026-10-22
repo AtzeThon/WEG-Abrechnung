@@ -71,7 +71,7 @@ Strings (`Enum(..., native_enum=False)`).
 | `accounts` | Bankkonten | `name`, `type` (`giro`/`ruecklage`), `opening_balance(_date)` |
 | `cost_types` | Kostenarten | `name` (unique), `category`, `default_supplier`, `kind`, `allocation_strategy`, `proportional_to_id` |
 | `transactions` | Buchungen | `account_id`, `booking_date`, `payee`, `cost_type_id`, `owner_id?`, `amount`, `note`, `source` (`manuell`/`csv_import`), `import_row_id?` |
-| `billing_periods` | Abrechnungsperioden | `label`, `start_date`, `end_date`, `status` (`draft`/`final`), `reserve_opening_balance`, `compute_next_advance` (bool), `inflation_rate` (%), `finalized_at?` |
+| `billing_periods` | Abrechnungsperioden | `label`, `start_date`, `end_date`, `status` (`draft`/`final`), `reserve_opening_balance`, `compute_next_advance` (bool), `inflation_rate` (%), `include_refunds` (bool), `finalized_at?` |
 | `period_opening_balances` | Saldovortrag Hausgeld je Eigentümer/Periode | `period_id`, `owner_id`, `hausgeld_carryover` (unique je Paar) |
 | `allocation_overrides` | Zähler-Direkteingaben je Kostenart×Eigentümer×Periode | `period_id`, `cost_type_id`, `owner_id`, `amount` |
 | `budget_entries` | Wirtschaftsplan: manuell überschriebene Zelle | `period_id`, `month_index` (0 = erster Monat), `cost_type_id`, `amount` (unique je Tripel) |
@@ -111,14 +111,26 @@ Strings, damit die Engine nicht von den ORM-Enums abhängt.
 4. `hausgeld`-Buchungen je Eigentümer → **geleistetes Hausgeld**.
 5. **Guthaben/Nachzahlung** = Hausgeld − Kostenanteil.
 6. **Endsaldo Hausgeld** = Saldovortrag + Sonderumlage − Investitionsanteil (MEA)
-   + Guthaben/Nachzahlung (+ Erstattung = 0) **− Rücklagen-Zuführung + Rücklagen-Entnahme**.
+   + Guthaben/Nachzahlung (+ Erstattung/Nachzahlung, **nur bei `include_refunds`**)
+   **− Rücklagen-Zuführung + Rücklagen-Entnahme**.
 7. **Endsaldo Rücklage** = Anfangssaldo·MEA + Zuführung − Entnahme (eigentümer­bezogen,
    wenn an der Buchung ein Eigentümer steht, sonst nach MEA).
 8. **Saldo gesamt** = Endsaldo Hausgeld + Endsaldo Rücklage. Eine reine
    Rücklagenbewegung verschiebt nur zwischen 6 und 7 (Summe bleibt gleich).
 
-**Bewusst nicht umgesetzt:** Erstattung/Nachzahlung fließt nicht in den Endsaldo
-(Feld/Typ existieren, Betrag wird 0 gesetzt).
+**Erstattung/Nachzahlung (Perioden-Flag `include_refunds`):** Buchungen vom Typ
+`erstattung` werden je Eigentümer summiert (`erstattung_paid`, nur mit Eigentümer;
+Vorzeichen wie gebucht: Nachzahlung eingegangen = +, Guthaben ausgezahlt = −).
+`PeriodInput.include_refunds` entscheidet, ob die Summe in den Endsaldo Hausgeld
+einfließt (`OwnerBillingResult.erstattung`); ist das Flag aus (Default, auch für alle
+bestehenden Perioden), bleibt `erstattung = 0` und das Verhalten unverändert. Das
+Flag liegt an `billing_periods`, wird in `periods/form.html` gesetzt und vom Service
+(`services/billing.build_period_input`) an die Engine durchgereicht. Es verhindert
+Doppelzählung, wenn die Beträge bereits manuell im Saldovortrag stehen (Periode 2026).
+Die Hausgeldübersicht (`periods/overview.html`) zeigt bei gesetztem Flag eine
+zusätzliche Spalte „Erstattung / Nachzahlung“, der Hausgeldkonto-Block der
+Einzelabrechnung eine Zeile „Nachzahlung eingegangen“ / „Guthaben ausgezahlt“.
+Der Wirtschaftsplan ist davon unabhängig (zählt Erstattungen immer zu den Einnahmen).
 
 `OwnerBillingResult.reserve_zufuehrung`/`.reserve_entnahme` (Schritt 6/7) werden
 zusätzlich zur Rücklagenübersicht auch in der **Hausgeldübersicht**
@@ -310,7 +322,8 @@ CLI (`python -m app.cli`): `initdb`, `create-admin <name> [--password …]`.
   (`WEG_DATABASE_PATH` gilt also auch für Alembic).
 - Bisherige Revisionen: `f5b2ccfd55a5` (Initialschema), `50dc58878cdf` (CSV-Import),
   `0b2add809501` (Wirtschaftsplan: `budget_entries`),
-  `5fd0b12998a5` (`billing_periods.compute_next_advance`, `.inflation_rate`).
+  `5fd0b12998a5` (`billing_periods.compute_next_advance`, `.inflation_rate`),
+  `a7c3e91d4b20` (`billing_periods.include_refunds`, Default aus).
 
 ---
 
@@ -383,6 +396,7 @@ Liste, Vorlage `transactions/pdf.html`).
 | `test_budget.py` | Wirtschaftsplan + Jahresvergleich: Monatsfenster, Ist vor Prognose, Anfangssaldo (nur Giro), Rücklagenbewegung (Entnahme/Zuführung/Girokonto-neutral), Saldo/Summen, Speichern/Zurücksetzen, Differenzen zweier Perioden (Service + Routen) |
 | `test_transfer.py` | Umbuchung zwischen Konten (zwei Beine, Auto-Kostenarten) |
 | `test_statements.py` | Einzelabrechnung Web + PDF-Route + „Alle als PDF"; künftiger Abschlag nur bei gesetztem Flag |
+| `test_refunds.py` | Flag `include_refunds`: Engine mit/ohne Flag (Vorzeichen, Eigentümerbezug, Fixture-Differenz), Formular speichert Flag, Übersicht/Einzelabrechnung, Sperre bei abgeschlossener Periode |
 | `test_advance.py` | `compute_next_advance` (Beispiel aus der Anforderung, Inflation, Guthaben, Euro-Rundung) |
 | `test_transactions.py` | CRUD, Filter, Ledger (inkl. von/bis-Zeitraum + Saldo-Anzeige), Buchungsliste als PDF |
 | `test_transactions.py` / `test_crud.py` / `test_smoke.py` | CRUD, Filter (auch leere Query-Parameter), Auth |
@@ -394,8 +408,9 @@ Liste, Vorlage `transactions/pdf.html`).
 
 ## 11. Bekannte Grenzen / geplante Erweiterungen
 
-- **Erstattung/Nachzahlung** wird nicht automatisch verrechnet (bewusst; Plumbing
-  vorhanden). Workaround: in den Saldovortrag einrechnen.
+- **Erstattung/Nachzahlung** wird nur verrechnet, wenn an der Periode
+  `include_refunds` gesetzt ist (Default aus). Buchungen ohne Eigentümer werden dabei
+  nie verteilt, sondern ignoriert.
 - **Umlageschlüssel `proportional`** ist in der Engine implementiert und getestet,
   aber in der Kostenart-UI noch nicht speziell erklärt.
 - **E-Mail-Versand** der PDF: nicht umgesetzt; `app/pdf.py` liefert Bytes, ein

@@ -45,6 +45,10 @@ class BillingPeriod(Base):
         Numeric(6, 2), default=Decimal("0"), server_default="0"
     )
 
+    # Flag: Erstattung/Nachzahlung-Buchungen (eigentümerbezogen) im Endsaldo Hausgeld
+    # berücksichtigen. Für bestehende Perioden aus (bereits im Saldovortrag enthalten).
+    include_refunds: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

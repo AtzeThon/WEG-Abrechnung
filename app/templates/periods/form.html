@@ -28,6 +28,23 @@
       {% endif %}
     </p>
 
+    <div class="border-t border-slate-200 pt-4">
+      <label class="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="include_refunds" value="1" class="mt-0.5"
+               {{ 'checked' if period and period.include_refunds }}>
+        <span>
+          <span class="font-medium">Erstattung/Nachzahlung im Endsaldo berücksichtigen</span><br>
+          <span class="text-xs text-slate-400">
+            Verrechnet die <strong>eigentümerbezogenen</strong> Buchungen vom Typ
+            „Erstattung/Nachzahlung“ dieser Periode mit dem Endsaldo Hausgeld:
+            eingegangene Nachzahlung (+) erhöht, ausgezahltes Guthaben (−) senkt ihn.
+            Nur einschalten, wenn diese Beträge <strong>nicht</strong> schon im Saldovortrag
+            enthalten sind (sonst zählen sie doppelt).
+          </span>
+        </span>
+      </label>
+    </div>
+
     <div class="border-t border-slate-200 pt-4 space-y-3">
       <label class="flex items-start gap-2 text-sm">
         <input type="checkbox" name="compute_next_advance" value="1" class="mt-0.5"

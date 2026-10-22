@@ -120,6 +120,10 @@
         <tr><td class="td">Anteil investive Ausgaben</td><td class="td text-right">./. {{ owner.investition_share | euro }}</td></tr>
         <tr><td class="td">{{ 'Guthaben' if owner.guthaben >= 0 else 'Nachzahlung' }} {{ year }}</td>
             <td class="td text-right">{{ owner.guthaben | euro }}</td></tr>
+        {% if period.include_refunds and owner.erstattung != 0 %}
+        <tr><td class="td">{{ 'Nachzahlung eingegangen' if owner.erstattung > 0 else 'Guthaben ausgezahlt' }}</td>
+            <td class="td text-right">{{ money(owner.erstattung) }}</td></tr>
+        {% endif %}
         {% set reserve_move = owner.reserve_entnahme - owner.reserve_zufuehrung %}
         {% if reserve_move != 0 %}
         <tr><td class="td">{{ 'Entnahme aus der Rücklage' if reserve_move > 0 else 'Zuführung zur Rücklage' }}</td>
@@ -153,5 +157,5 @@
 
 <p class="text-xs text-slate-400 mt-4">
   {% if period.status.value != 'final' %}<span class="text-amber-600">Entwurf – noch nicht beschlossen. </span>{% endif %}
-  Erstattungen/Nachzahlungen aus der Vorperiode sind in dieser Darstellung nicht berücksichtigt.
+  {% if not period.include_refunds %}Erstattungen/Nachzahlungen aus der Vorperiode sind in dieser Darstellung nicht berücksichtigt.{% endif %}
 </p>
